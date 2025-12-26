@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installer - NetControl Containers</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>NetControl</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg><span>Dashboard</span></a>
+                <a href="/docker" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg><span>Docker</span></a>
+                <a href="/kubernetes" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg><span>Kubernetes</span></a>
+                <a href="/installer" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg><span>Installer</span></a>
+                <a href="/files" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg><span>File Explorer</span></a>
+                <a href="/terminal" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg><span>Terminal</span></a>
+                <a href="/wireguard" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8mc0-4.144" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                    </svg>
+                    <span>WireGuard</span>
+                </a>
+                <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg><span>Settings</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">{{.Username}}</div><span>{{.Username}}</span>
+                </div>
+                <button class="logout-btn" onclick="logout()"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg></button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>📦 Software Installer</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="checkStatus()">Refresh Status</button>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="stats-grid">
+                    <!-- Docker Card -->
+                    <div class="section-card">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="font-size: 3rem;">🐳</div>
+                            <div>
+                                <h2 style="margin: 0;">Docker</h2>
+                                <p style="margin: 0; color: var(--text-muted);">Container runtime engine</p>
+                            </div>
+                        </div>
+                        <div id="dockerStatus" class="status-info" style="margin-bottom: 1rem;">
+                            <span class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div id="dockerVersion"
+                            style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;"></div>
+                        <div id="dockerButtons">
+                            <button class="btn btn-primary" id="installDockerBtn" onclick="installDocker()"
+                                style="display: none;">Install Docker</button>
+                            <button class="btn btn-warning" id="restartDockerBtn" onclick="restartSoftware('docker')"
+                                style="display: none;">Restart</button>
+                            <button class="btn btn-danger" id="uninstallDockerBtn" onclick="uninstallDocker()"
+                                style="display: none;">Uninstall</button>
+                        </div>
+                    </div>
+
+                    <!-- Kubernetes Card -->
+                    <div class="section-card">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="font-size: 3rem;">☸️</div>
+                            <div>
+                                <h2 style="margin: 0;">Kubernetes</h2>
+                                <p style="margin: 0; color: var(--text-muted);">Container orchestration</p>
+                            </div>
+                        </div>
+                        <div id="k8sStatus" class="status-info" style="margin-bottom: 1rem;">
+                            <span class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div id="k8sVersion"
+                            style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;"></div>
+                        <div id="k8sButtons">
+                            <button class="btn btn-primary" id="installK8sBtn" onclick="installK8s()"
+                                style="display: none;">Install Kubernetes</button>
+                            <button class="btn btn-primary" id="setupK8sBtn" onclick="setupK8s()"
+                                style="display: none;">Setup Cluster</button>
+                            <button class="btn btn-warning" id="restartK8sBtn" onclick="restartSoftware('kubelet')"
+                                style="display: none;">Restart Kubelet</button>
+                            <button class="btn btn-danger" id="uninstallK8sBtn" onclick="uninstallKubernetes()"
+                                style="display: none;">Uninstall</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Installation Progress -->
+                <div id="installProgress" class="section-card" style="display: none;">
+                    <h2>Operation Progress</h2>
+                    <div class="install-progress">
+                        <div class="install-progress-bar">
+                            <div class="install-progress-fill" id="progressBar" style="width: 0%;"></div>
+                        </div>
+                        <div class="install-status" id="progressStatus">Starting...</div>
+                    </div>
+                    <div class="log-viewer" id="installLogs" style="margin-top: 1rem; height: 300px;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        async function checkStatus() {
+            try {
+                const data = await NetControl.api.get('/api/installer/status');
+
+                // Docker status
+                const dockerStatusEl = document.getElementById('dockerStatus');
+                const dockerVersionEl = document.getElementById('dockerVersion');
+                const installDockerBtn = document.getElementById('installDockerBtn');
+                const uninstallDockerBtn = document.getElementById('uninstallDockerBtn');
+                const restartDockerBtn = document.getElementById('restartDockerBtn');
+
+                if (data.docker.installed) {
+                    dockerStatusEl.innerHTML = `<span class="badge badge-success">Installed</span> ${data.docker.running ? '<span class="badge badge-success">Running</span>' : '<span class="badge badge-danger">Stopped</span>'}`;
+                    dockerVersionEl.textContent = data.docker.version || '';
+                    installDockerBtn.style.display = 'none';
+                    uninstallDockerBtn.style.display = 'inline-flex';
+                    restartDockerBtn.style.display = 'inline-flex';
+                } else {
+                    dockerStatusEl.innerHTML = '<span class="badge badge-danger">Not Installed</span>';
+                    dockerVersionEl.textContent = '';
+                    installDockerBtn.style.display = 'inline-flex';
+                    uninstallDockerBtn.style.display = 'none';
+                    restartDockerBtn.style.display = 'none';
+                }
+
+                // Kubernetes status
+                const k8sStatusEl = document.getElementById('k8sStatus');
+                const k8sVersionEl = document.getElementById('k8sVersion');
+                const installK8sBtn = document.getElementById('installK8sBtn');
+                const uninstallK8sBtn = document.getElementById('uninstallK8sBtn');
+                const restartK8sBtn = document.getElementById('restartK8sBtn');
+
+                if (data.kubernetes.installed) {
+                    k8sStatusEl.innerHTML = `<span class="badge badge-success">Installed</span> ${data.kubernetes.running ? '<span class="badge badge-success">Connected</span>' : '<span class="badge badge-warning">Not Connected</span>'}`;
+                    k8sVersionEl.textContent = data.kubernetes.version || '';
+                    installK8sBtn.style.display = 'none';
+                    uninstallK8sBtn.style.display = 'inline-flex';
+                    restartK8sBtn.style.display = 'inline-flex';
+
+                    // Show Setup button if installed but not running
+                    if (!data.kubernetes.running) {
+                        document.getElementById('setupK8sBtn').style.display = 'inline-flex';
+                    } else {
+                        document.getElementById('setupK8sBtn').style.display = 'none';
+                    }
+                } else {
+                    k8sStatusEl.innerHTML = '<span class="badge badge-danger">Not Installed</span>';
+                    k8sVersionEl.textContent = '';
+                    installK8sBtn.style.display = 'inline-flex';
+                    uninstallK8sBtn.style.display = 'none';
+                    restartK8sBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Failed to check status:", error);
+
+                // Show connection error on both
+                document.getElementById('dockerStatus').innerHTML = '<span class="badge badge-danger">Connection Error</span>';
+                document.getElementById('k8sStatus').innerHTML = '<span class="badge badge-danger">Connection Error</span>';
+
+                // Show install buttons as fallback so user isn't stuck
+                document.getElementById('installDockerBtn').style.display = 'inline-flex';
+                document.getElementById('installK8sBtn').style.display = 'inline-flex';
+            }
+        }
+
+        function installDocker() {
+            startOperation('ws/installer/docker');
+        }
+
+        function installK8s() {
+            startOperation('ws/installer/kubernetes');
+        }
+
+        function setupK8s() {
+            startOperation('ws/installer/setup-k8s');
+        }
+
+        function startOperation(endpoint) {
+            document.getElementById('installProgress').style.display = 'block';
+            document.getElementById('installLogs').textContent = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressStatus').textContent = 'Connecting...';
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${protocol}//${window.location.host}/${endpoint}`);
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    document.getElementById('installLogs').textContent += data.message + '\n';
+                    document.getElementById('installLogs').scrollTop = document.getElementById('installLogs').scrollHeight;
+
+                    const match = data.message.match(/\[(\d+)%\]/);
+                    if (match) {
+                        document.getElementById('progressBar').style.width = match[1] + '%';
+                        document.getElementById('progressStatus').textContent = data.message;
+                    }
+                }
+                if (data.complete) {
+                    if (data.success) {
+                        document.getElementById('progressStatus').textContent = 'Operation complete!';
+                        document.getElementById('progressBar').style.width = '100%';
+                    } else if (data.error) {
+                        document.getElementById('progressStatus').textContent = 'Error: ' + data.error;
+                    }
+                    setTimeout(checkStatus, 2000);
+                }
+            };
+        }
+
+        async function uninstallDocker() {
+            if (await NetControl.confirmAction('Are you sure you want to uninstall Docker? This will remove all containers and images.')) {
+                await NetControl.api.delete('/api/installer/docker');
+                checkStatus();
+            }
+        }
+
+        async function uninstallKubernetes() {
+            if (await NetControl.confirmAction('Are you sure you want to uninstall Kubernetes? This will remove the cluster.')) {
+                await NetControl.api.delete('/api/installer/kubernetes');
+                checkStatus();
+            }
+        }
+
+        async function restartSoftware(service) {
+            if (await NetControl.confirmAction(`Are you sure you want to restart ${service}?`)) {
+                try {
+                    await NetControl.api.post(`/api/installer/restart/${service}`);
+                    alert(`${service} restarted successfully`);
+                    checkStatus();
+                } catch (e) {
+                    alert('Failed to restart: ' + e.message);
+                }
+            }
+        }
+
+        checkStatus();
+    </script>
+</body>
+
+</html>

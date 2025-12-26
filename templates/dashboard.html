@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - NetControl Containers</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>NetControl</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item active">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/docker" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    <span>Docker</span>
+                </a>
+                <a href="/kubernetes" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span>Kubernetes</span>
+                </a>
+                <a href="/installer" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Installer</span>
+                </a>
+                <a href="/files" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    <span>File Explorer</span>
+                </a>
+                <a href="/terminal" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Terminal</span>
+                </a>
+                <a href="/wireguard" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8mc0-4.144" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                    </svg>
+                    <span>WireGuard</span>
+                </a>
+                <a href="/settings" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">{{.Username}}</div>
+                    <span>{{.Username}}</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1>Dashboard</h1>
+                <div class="header-actions">
+                    <span id="serverTime" class="server-time"></span>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- System Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card cpu-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">CPU Usage</span>
+                            <span class="stat-value" id="cpuPercent">0%</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill cpu-progress" id="cpuProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card memory-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Memory Usage</span>
+                            <span class="stat-value" id="memoryPercent">0%</span>
+                            <span class="stat-detail" id="memoryDetail"></span>
+                            <div class="progress-bar">
+                                <div class="progress-fill memory-progress" id="memoryProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card storage-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Storage</span>
+                            <span class="stat-value" id="storagePercent">0%</span>
+                            <span class="stat-detail" id="storageDetail"></span>
+                            <div class="progress-bar">
+                                <div class="progress-fill storage-progress" id="storageProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Info Section -->
+                <div class="info-section">
+                    <div class="section-card">
+                        <h2>System Information</h2>
+                        <div class="info-grid" id="systemInfo">
+                            <div class="info-item">
+                                <span class="info-label">Hostname</span>
+                                <span class="info-value" id="hostname">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">OS</span>
+                                <span class="info-value" id="osInfo">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Platform</span>
+                                <span class="info-value" id="platform">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Architecture</span>
+                                <span class="info-value" id="arch">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Uptime</span>
+                                <span class="info-value" id="uptime">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">CPU Model</span>
+                                <span class="info-value" id="cpuModel">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">CPU Cores</span>
+                                <span class="info-value" id="cpuCores">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container Status Section -->
+                <div class="status-section">
+                    <div class="section-card">
+                        <h2>Container Status</h2>
+                        <div class="status-grid">
+                            <div class="status-item" id="dockerStatus">
+                                <div class="status-icon docker">🐳</div>
+                                <div class="status-info">
+                                    <span class="status-name">Docker</span>
+                                    <span class="status-state checking">Checking...</span>
+                                </div>
+                            </div>
+                            <div class="status-item" id="k8sStatus">
+                                <div class="status-icon k8s">☸️</div>
+                                <div class="status-info">
+                                    <span class="status-name">Kubernetes</span>
+                                    <span class="status-state checking">Checking...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="quick-section">
+                    <div class="section-card">
+                        <h2>Disk Partitions</h2>
+                        <div class="disk-list" id="diskList"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Update stats every 3 seconds
+        function updateStats() {
+            fetch('/api/system/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('cpuPercent').textContent = data.cpu_percent.toFixed(1) + '%';
+                    document.getElementById('cpuProgress').style.width = data.cpu_percent + '%';
+
+                    document.getElementById('memoryPercent').textContent = data.memory_percent.toFixed(1) + '%';
+                    document.getElementById('memoryProgress').style.width = data.memory_percent + '%';
+                    document.getElementById('memoryDetail').textContent = formatBytes(data.memory_used) + ' / ' + formatBytes(data.memory_total);
+
+                    document.getElementById('storagePercent').textContent = data.disk_percent.toFixed(1) + '%';
+                    document.getElementById('storageProgress').style.width = data.disk_percent + '%';
+                    document.getElementById('storageDetail').textContent = formatBytes(data.disk_used) + ' / ' + formatBytes(data.disk_total);
+                });
+        }
+
+        // Get system info
+        function getSystemInfo() {
+            fetch('/api/system/info')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('hostname').textContent = data.hostname;
+                    document.getElementById('osInfo').textContent = data.os;
+                    document.getElementById('platform').textContent = data.platform || 'N/A';
+                    document.getElementById('arch').textContent = data.arch;
+                    document.getElementById('uptime').textContent = formatUptime(data.uptime);
+                    document.getElementById('cpuModel').textContent = data.cpu_info.model_name || 'N/A';
+                    document.getElementById('cpuCores').textContent = data.cpu_info.cores + ' cores / ' + data.cpu_info.threads + ' threads';
+                });
+        }
+
+        // Get disk info
+        function getDiskInfo() {
+            fetch('/api/system/disk')
+                .then(r => r.json())
+                .then(data => {
+                    const diskList = document.getElementById('diskList');
+                    diskList.innerHTML = data.map(disk => `
+                        <div class="disk-item">
+                            <div class="disk-info">
+                                <span class="disk-mount">${disk.mountpoint}</span>
+                                <span class="disk-type">${disk.fstype}</span>
+                            </div>
+                            <div class="disk-usage">
+                                <div class="disk-progress">
+                                    <div class="disk-progress-fill" style="width: ${disk.used_percent}%"></div>
+                                </div>
+                                <span class="disk-percent">${disk.used_percent.toFixed(1)}%</span>
+                            </div>
+                            <div class="disk-size">
+                                ${formatBytes(disk.used)} / ${formatBytes(disk.total)}
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        // Check Docker status
+        function checkDockerStatus() {
+            fetch('/api/docker/status')
+                .then(r => r.json())
+                .then(data => {
+                    const el = document.querySelector('#dockerStatus .status-state');
+                    el.textContent = data.available ? 'Running' : 'Not Available';
+                    el.className = 'status-state ' + (data.available ? 'running' : 'stopped');
+                });
+        }
+
+        // Check Kubernetes status
+        function checkK8sStatus() {
+            fetch('/api/kubernetes/status')
+                .then(r => r.json())
+                .then(data => {
+                    const el = document.querySelector('#k8sStatus .status-state');
+                    el.textContent = data.available ? 'Connected' : 'Not Available';
+                    el.className = 'status-state ' + (data.available ? 'running' : 'stopped');
+                });
+        }
+
+        // Update server time
+        function updateTime() {
+            document.getElementById('serverTime').textContent = new Date().toLocaleString();
+        }
+
+        // Initialize
+        updateStats();
+        getSystemInfo();
+        getDiskInfo();
+        checkDockerStatus();
+        checkK8sStatus();
+        updateTime();
+
+        setInterval(updateStats, 3000);
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+
+</html>

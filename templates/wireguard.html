@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireGuard - NetControl Containers</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .vpn-status-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vpn-status-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .vpn-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .vpn-badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .vpn-badge.inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .config-editor {
+            width: 100%;
+            height: 400px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+            outline: none;
+        }
+
+        .config-editor:focus {
+            border-color: #3b82f6;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .detail-item label {
+            display: block;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-item span {
+            font-size: 0.875rem;
+            color: #e5e7eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>NetControl</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/docker" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    <span>Docker</span>
+                </a>
+                <a href="/kubernetes" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span>Kubernetes</span>
+                </a>
+                <a href="/installer" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Installer</span>
+                </a>
+                <a href="/files" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    <span>File Explorer</span>
+                </a>
+                <a href="/terminal" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Terminal</span>
+                </a>
+                <a href="/wireguard" class="nav-item active">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8mc0-4.144" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                    </svg>
+                    <span>WireGuard</span>
+                </a>
+                <a href="/settings" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">{{.Username}}</div>
+                    <span>{{.Username}}</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1>WireGuard Client</h1>
+                <div class="header-actions">
+                    <span id="serverTime" class="server-time"></span>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="vpn-status-card">
+                    <div class="vpn-status-info">
+                        <h2>Status</h2>
+                        <span id="vpnStatusBadge" class="vpn-badge inactive">Disconnected</span>
+                    </div>
+                    <div>
+                        <button id="connectBtn" class="btn btn-primary" onclick="connectVPN()">Connect</button>
+                        <button id="disconnectBtn" class="btn btn-danger" onclick="disconnectVPN()"
+                            style="display: none;">Disconnect</button>
+                    </div>
+                </div>
+
+                <div class="section-card" id="connectionDetails" style="display: none; margin-bottom: 2rem;">
+                    <h2>Connection Details</h2>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <label>Interface</label>
+                            <span id="wgInterface">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Public Key</label>
+                            <span id="wgPublicKey">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Endpoint</label>
+                            <span id="wgEndpoint">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Last Handshake</label>
+                            <span id="wgHandshake">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Traffic (Rx / Tx)</label>
+                            <span id="wgTraffic">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h2>Configuration</h2>
+                    <p style="color: #9ca3af; margin-bottom: 1rem;">
+                        Paste your WireGuard configuration (wg0.conf) here. This file will be saved and used to
+                        establish the connection.
+                    </p>
+                    <textarea id="configEditor" class="config-editor" spellcheck="false" placeholder="[Interface]
+PrivateKey = ...
+Address = ...
+
+[Peer]
+PublicKey = ...
+Endpoint = ..."></textarea>
+
+                    <div class="actions-bar">
+                        <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // WireGuard API
+        const API_BASE = '/api/wireguard';
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/config`);
+                const data = await res.json();
+                if (data.config) {
+                    document.getElementById('configEditor').value = data.config;
+                }
+            } catch (err) {
+                console.error('Failed to load config:', err);
+                showToast('Failed to load configuration', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const config = document.getElementById('configEditor').value;
+            if (!config.trim()) {
+                showToast('Configuration cannot be empty', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+
+                if (res.ok) {
+                    showToast('Configuration saved successfully', 'success');
+                    updateStatus();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to save configuration', 'error');
+                }
+            } catch (err) {
+                console.error('Failed to save config:', err);
+                showToast('Failed to save configuration', 'error');
+            }
+        }
+
+        async function connectVPN() {
+            try {
+                const res = await fetch(`${API_BASE}/connect`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Connecting...', 'info');
+                    setTimeout(updateStatus, 2000);
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to connect', 'error');
+                }
+            } catch (err) {
+                console.error('Connection failed:', err);
+                showToast('Failed to connect', 'error');
+            }
+        }
+
+        async function disconnectVPN() {
+            try {
+                const res = await fetch(`${API_BASE}/disconnect`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Disconnected', 'info');
+                    setTimeout(updateStatus, 1000);
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to disconnect', 'error');
+                }
+            } catch (err) {
+                console.error('Disconnection failed:', err);
+                showToast('Failed to disconnect', 'error');
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/status`);
+                const data = await res.json();
+
+                const badge = document.getElementById('vpnStatusBadge');
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+                const details = document.getElementById('connectionDetails');
+
+                if (data.is_active) {
+                    badge.textContent = 'Connected';
+                    badge.className = 'vpn-badge active';
+                    connectBtn.style.display = 'none';
+                    disconnectBtn.style.display = 'inline-block';
+                    details.style.display = 'block';
+
+                    document.getElementById('wgInterface').textContent = data.interface || '-';
+                    document.getElementById('wgPublicKey').textContent = data.public_key || '-';
+                    document.getElementById('wgEndpoint').textContent = data.endpoint || '-';
+                    document.getElementById('wgHandshake').textContent = data.last_handshake || '-';
+                    document.getElementById('wgTraffic').textContent = (data.rx_bytes || '0 B') + ' / ' + (data.tx_bytes || '0 B');
+                } else {
+                    badge.textContent = 'Disconnected';
+                    badge.className = 'vpn-badge inactive';
+                    connectBtn.style.display = 'inline-block';
+                    disconnectBtn.style.display = 'none';
+                    details.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Failed to update status:', err);
+            }
+        }
+
+        function updateTime() {
+            document.getElementById('serverTime').textContent = new Date().toLocaleString();
+        }
+
+        // Initialize
+        loadConfig();
+        updateStatus();
+        updateTime();
+        setInterval(updateStatus, 5000);
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+
+</html>

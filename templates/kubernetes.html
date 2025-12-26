@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes - NetControl Containers</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>NetControl</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg><span>Dashboard</span></a>
+                <a href="/docker" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg><span>Docker</span></a>
+                <a href="/kubernetes" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg><span>Kubernetes</span></a>
+                <a href="/installer" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg><span>Installer</span></a>
+                <a href="/files" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg><span>File Explorer</span></a>
+                <a href="/terminal" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg><span>Terminal</span></a>
+                <a href="/wireguard" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8mc0-4.144" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                    </svg>
+                    <span>WireGuard</span>
+                </a>
+                <a href="/settings" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg><span>Settings</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">{{.Username}}</div><span>{{.Username}}</span>
+                </div>
+                <button class="logout-btn" onclick="logout()"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg></button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>☸️ Kubernetes Management</h1>
+                <div class="header-actions">
+                    <select id="namespaceSelect" class="form-control" style="width: 200px;" onchange="loadK8sData()">
+                        <option value="default">default</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="loadK8sData()">Refresh</button>
+                </div>
+            </header>
+
+            <div class="content">
+                <div id="k8sNotAvailable" class="section-card" style="display: none;">
+                    <div class="empty-state">
+                        <h3>Kubernetes Not Available</h3>
+                        <p>Kubernetes is not configured or not accessible. Go to <a href="/installer">Installer</a> to
+                            install Kubernetes.</p>
+                    </div>
+                </div>
+
+                <div id="k8sContent">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('pods')">Pods</button>
+                        <button class="tab" onclick="switchTab('deployments')">Deployments</button>
+                        <button class="tab" onclick="switchTab('services')">Services</button>
+                    </div>
+
+                    <div id="podsTab" class="tab-content">
+                        <div class="section-card">
+                            <h2>Pods</h2>
+                            <div id="podList"></div>
+                        </div>
+                    </div>
+
+                    <div id="deploymentsTab" class="tab-content" style="display: none;">
+                        <div class="section-card">
+                            <h2>Deployments</h2>
+                            <div id="deploymentList"></div>
+                        </div>
+                    </div>
+
+                    <div id="servicesTab" class="tab-content" style="display: none;">
+                        <div class="section-card">
+                            <h2>Services</h2>
+                            <div id="serviceList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="logsModal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Pod Logs</h3>
+                <button class="modal-close" onclick="hideModal('logsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="log-viewer" id="podLogsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        let k8sAvailable = false;
+        let currentNamespace = 'default';
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').style.display = 'block';
+        }
+
+        async function checkK8s() {
+            const data = await NetControl.api.get('/api/kubernetes/status');
+            k8sAvailable = data && data.available;
+            document.getElementById('k8sNotAvailable').style.display = k8sAvailable ? 'none' : 'block';
+            document.getElementById('k8sContent').style.display = k8sAvailable ? 'block' : 'none';
+            if (k8sAvailable) {
+                await loadNamespaces();
+                loadK8sData();
+            }
+        }
+
+        async function loadNamespaces() {
+            const namespaces = await NetControl.api.get('/api/kubernetes/namespaces');
+            const select = document.getElementById('namespaceSelect');
+            select.innerHTML = namespaces.map(ns => `<option value="${ns.name}">${ns.name}</option>`).join('');
+        }
+
+        async function loadK8sData() {
+            currentNamespace = document.getElementById('namespaceSelect').value;
+            loadPods();
+            loadDeployments();
+            loadServices();
+        }
+
+        async function loadPods() {
+            const pods = await NetControl.api.get(`/api/kubernetes/pods?namespace=${currentNamespace}`);
+            if (!pods || pods.length === 0) {
+                document.getElementById('podList').innerHTML = '<div class="empty-state"><h3>No Pods</h3></div>';
+                return;
+            }
+            document.getElementById('podList').innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Name</th><th>Ready</th><th>Status</th><th>Restarts</th><th>Age</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        ${pods.map(p => `
+                            <tr>
+                                <td>${p.name}</td>
+                                <td>${p.ready}</td>
+                                <td><span class="badge badge-${p.status === 'Running' ? 'success' : 'warning'}">${p.status}</span></td>
+                                <td>${p.restarts}</td>
+                                <td>${p.age}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-secondary" onclick="showPodLogs('${p.name}')">Logs</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deletePod('${p.name}')">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function loadDeployments() {
+            const deps = await NetControl.api.get(`/api/kubernetes/deployments?namespace=${currentNamespace}`);
+            if (!deps || deps.length === 0) {
+                document.getElementById('deploymentList').innerHTML = '<div class="empty-state"><h3>No Deployments</h3></div>';
+                return;
+            }
+            document.getElementById('deploymentList').innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Name</th><th>Ready</th><th>Up-to-date</th><th>Available</th><th>Age</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        ${deps.map(d => `
+                            <tr>
+                                <td>${d.name}</td>
+                                <td>${d.ready}</td>
+                                <td>${d.up_to_date}</td>
+                                <td>${d.available}</td>
+                                <td>${d.age}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-secondary" onclick="restartDeployment('${d.name}')">Restart</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function loadServices() {
+            const svcs = await NetControl.api.get(`/api/kubernetes/services?namespace=${currentNamespace}`);
+            if (!svcs || svcs.length === 0) {
+                document.getElementById('serviceList').innerHTML = '<div class="empty-state"><h3>No Services</h3></div>';
+                return;
+            }
+            document.getElementById('serviceList').innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Name</th><th>Type</th><th>Cluster IP</th><th>External IP</th><th>Ports</th><th>Age</th></tr></thead>
+                    <tbody>
+                        ${svcs.map(s => `
+                            <tr>
+                                <td>${s.name}</td>
+                                <td><span class="badge badge-info">${s.type}</span></td>
+                                <td><code>${s.cluster_ip}</code></td>
+                                <td>${s.external_ip}</td>
+                                <td><code>${s.ports}</code></td>
+                                <td>${s.age}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function showPodLogs(podName) {
+            const data = await NetControl.api.get(`/api/kubernetes/pods/${podName}/logs?namespace=${currentNamespace}&tail=200`);
+            document.getElementById('podLogsContent').textContent = data.logs || 'No logs available';
+            showModal('logsModal');
+        }
+
+        async function deletePod(podName) {
+            if (await NetControl.confirmAction(`Delete pod ${podName}?`)) {
+                await NetControl.api.delete(`/api/kubernetes/pods/${podName}?namespace=${currentNamespace}`);
+                loadPods();
+            }
+        }
+
+        async function restartDeployment(name) {
+            await NetControl.api.post(`/api/kubernetes/deployments/${name}/restart?namespace=${currentNamespace}`);
+            NetControl.showToast('Deployment restarted', 'success');
+            loadDeployments();
+        }
+
+        checkK8s();
+    </script>
+</body>
+
+</html>

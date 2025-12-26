@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker - NetControl Containers</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>NetControl</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/docker" class="nav-item active">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    <span>Docker</span>
+                </a>
+                <a href="/kubernetes" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span>Kubernetes</span>
+                </a>
+                <a href="/installer" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Installer</span>
+                </a>
+                <a href="/files" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    <span>File Explorer</span>
+                </a>
+                <a href="/terminal" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Terminal</span>
+                </a>
+                <a href="/wireguard" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8mc0-4.144" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                    </svg>
+                    <span>WireGuard</span>
+                </a>
+                <a href="/settings" class="nav-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">{{.Username}}</div>
+                    <span>{{.Username}}</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1>🐳 Docker Management</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="loadContainers()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            width="16" height="16">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- Docker Status -->
+                <div id="dockerNotAvailable" class="section-card" style="display: none;">
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <h3>Docker Not Available</h3>
+                        <p>Docker is not installed or not running. Go to <a href="/installer">Installer</a> to install
+                            Docker.</p>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div id="dockerContent">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('containers')">Containers</button>
+                        <button class="tab" onclick="switchTab('images')">Images</button>
+                    </div>
+
+                    <!-- Containers Tab -->
+                    <div id="containersTab" class="tab-content">
+                        <div class="section-card">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h2>Containers</h2>
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                    <input type="checkbox" id="showAllContainers" onchange="loadContainers()">
+                                    Show all containers
+                                </label>
+                            </div>
+                            <div id="containerList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Images Tab -->
+                    <div id="imagesTab" class="tab-content" style="display: none;">
+                        <div class="section-card">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h2>Images</h2>
+                                <button class="btn btn-primary btn-sm" onclick="showPullModal()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" width="16" height="16">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Pull Image
+                                </button>
+                            </div>
+                            <div id="imageList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Logs Modal -->
+    <div class="modal-overlay" id="logsModal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Container Logs</h3>
+                <button class="modal-close" onclick="hideModal('logsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="log-viewer" id="logsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pull Image Modal -->
+    <div class="modal-overlay" id="pullModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Pull Image</h3>
+                <button class="modal-close" onclick="hideModal('pullModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="imageName">Image Name</label>
+                    <input type="text" class="form-control" id="imageName" placeholder="e.g., nginx:latest">
+                </div>
+                <div id="pullProgress" style="display: none;">
+                    <div class="log-viewer" id="pullLogs" style="height: 200px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('pullModal')">Cancel</button>
+                <button class="btn btn-primary" id="pullBtn" onclick="pullImage()">Pull</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        let dockerAvailable = false;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').style.display = 'block';
+
+            if (tab === 'images') loadImages();
+        }
+
+        async function checkDocker() {
+            const data = await NetControl.api.get('/api/docker/status');
+            dockerAvailable = data && data.available;
+
+            document.getElementById('dockerNotAvailable').style.display = dockerAvailable ? 'none' : 'block';
+            document.getElementById('dockerContent').style.display = dockerAvailable ? 'block' : 'none';
+
+            if (dockerAvailable) loadContainers();
+        }
+
+        async function loadContainers() {
+            if (!dockerAvailable) return;
+
+            const showAll = document.getElementById('showAllContainers').checked;
+            const containers = await NetControl.api.get(`/api/docker/containers?all=${showAll}`);
+
+            if (!containers || containers.length === 0) {
+                document.getElementById('containerList').innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                        <h3>No Containers</h3>
+                        <p>No containers found. Start a container using Docker CLI.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('containerList').innerHTML = containers.map(c => `
+                <div class="container-card">
+                    <div class="container-header">
+                        <div>
+                            <div class="container-name">
+                                <span class="badge badge-${c.state === 'running' ? 'success' : 'danger'}">${c.state}</span>
+                                ${c.name}
+                            </div>
+                            <div class="container-image">${c.image}</div>
+                        </div>
+                        <div class="action-buttons">
+                            ${c.state === 'running' ? `
+                                <button class="btn btn-warning btn-sm" onclick="stopContainer('${c.id}')" title="Stop">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                    </svg>
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="restartContainer('${c.id}')" title="Restart">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            ` : `
+                                <button class="btn btn-success btn-sm" onclick="startContainer('${c.id}')" title="Start">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </button>
+                            `}
+                            <button class="btn btn-secondary btn-sm" onclick="showLogs('${c.id}')" title="Logs">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="removeContainer('${c.id}')" title="Remove">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="container-stats" id="stats-${c.id}">
+                        <div class="container-stat">
+                            <span class="container-stat-label">CPU</span>
+                            <span class="container-stat-value">-</span>
+                        </div>
+                        <div class="container-stat">
+                            <span class="container-stat-label">Memory</span>
+                            <span class="container-stat-value">-</span>
+                        </div>
+                        <div class="container-stat">
+                            <span class="container-stat-label">Network RX</span>
+                            <span class="container-stat-value">-</span>
+                        </div>
+                        <div class="container-stat">
+                            <span class="container-stat-label">Network TX</span>
+                            <span class="container-stat-value">-</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Load stats for running containers
+            containers.filter(c => c.state === 'running').forEach(c => loadContainerStats(c.id));
+        }
+
+        async function loadContainerStats(containerId) {
+            try {
+                const stats = await NetControl.api.get(`/api/docker/containers/${containerId}/stats`);
+                if (stats) {
+                    const el = document.getElementById(`stats-${containerId}`);
+                    if (el) {
+                        el.innerHTML = `
+                            <div class="container-stat">
+                                <span class="container-stat-label">CPU</span>
+                                <span class="container-stat-value">${stats.cpu_percent.toFixed(1)}%</span>
+                            </div>
+                            <div class="container-stat">
+                                <span class="container-stat-label">Memory</span>
+                                <span class="container-stat-value">${formatBytes(stats.memory_usage)}</span>
+                            </div>
+                            <div class="container-stat">
+                                <span class="container-stat-label">Network RX</span>
+                                <span class="container-stat-value">${formatBytes(stats.network_rx)}</span>
+                            </div>
+                            <div class="container-stat">
+                                <span class="container-stat-label">Network TX</span>
+                                <span class="container-stat-value">${formatBytes(stats.network_tx)}</span>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (e) { }
+        }
+
+        async function loadImages() {
+            const images = await NetControl.api.get('/api/docker/images');
+
+            if (!images || images.length === 0) {
+                document.getElementById('imageList').innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Images</h3>
+                        <p>No images found. Pull an image to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('imageList').innerHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Repository</th>
+                            <th>Tag</th>
+                            <th>ID</th>
+                            <th>Size</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${images.map(img => {
+                const tag = img.repo_tags && img.repo_tags[0] ? img.repo_tags[0] : '<none>:<none>';
+                const [repo, version] = tag.split(':');
+                return `
+                                <tr>
+                                    <td>${repo}</td>
+                                    <td><span class="badge badge-info">${version}</span></td>
+                                    <td><code>${img.id}</code></td>
+                                    <td>${formatBytes(img.size)}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="removeImage('${img.id}')">Remove</button>
+                                    </td>
+                                </tr>
+                            `;
+            }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function startContainer(id) {
+            await NetControl.api.post(`/api/docker/containers/${id}/start`);
+            loadContainers();
+        }
+
+        async function stopContainer(id) {
+            await NetControl.api.post(`/api/docker/containers/${id}/stop`);
+            loadContainers();
+        }
+
+        async function restartContainer(id) {
+            await NetControl.api.post(`/api/docker/containers/${id}/restart`);
+            loadContainers();
+        }
+
+        async function removeContainer(id) {
+            if (await NetControl.confirmAction('Are you sure you want to remove this container?')) {
+                await NetControl.api.delete(`/api/docker/containers/${id}?force=true`);
+                loadContainers();
+            }
+        }
+
+        async function showLogs(id) {
+            const data = await NetControl.api.get(`/api/docker/containers/${id}/logs?tail=200`);
+            document.getElementById('logsContent').textContent = data.logs || 'No logs available';
+            showModal('logsModal');
+        }
+
+        function showPullModal() {
+            document.getElementById('imageName').value = '';
+            document.getElementById('pullProgress').style.display = 'none';
+            document.getElementById('pullLogs').textContent = '';
+            showModal('pullModal');
+        }
+
+        async function pullImage() {
+            const imageName = document.getElementById('imageName').value.trim();
+            if (!imageName) return;
+
+            document.getElementById('pullProgress').style.display = 'block';
+            document.getElementById('pullBtn').disabled = true;
+
+            try {
+                const response = await fetch('/api/docker/images/pull', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageName })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const text = decoder.decode(value);
+                    document.getElementById('pullLogs').textContent += text;
+                }
+
+                loadImages();
+            } finally {
+                document.getElementById('pullBtn').disabled = false;
+            }
+        }
+
+        async function removeImage(id) {
+            if (await NetControl.confirmAction('Are you sure you want to remove this image?')) {
+                await NetControl.api.delete(`/api/docker/images/${id}?force=true`);
+                loadImages();
+            }
+        }
+
+        // Initialize
+        checkDocker();
+    </script>
+</body>
+
+</html>
