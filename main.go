@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"time"
 
 	"netcontrol-containers/config"
 	"netcontrol-containers/database"
@@ -12,15 +17,38 @@ import (
 	"netcontrol-containers/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kardianos/service"
 )
 
-func main() {
+var logger service.Logger
+
+type program struct {
+	srv *http.Server
+}
+
+func (p *program) Start(s service.Service) error {
+	// Start should not block. Do the actual work async.
+	go p.run()
+	return nil
+}
+
+func (p *program) run() {
+	// Ensure we are in the executable directory so relative paths work
+	exePath, err := os.Executable()
+	if err == nil {
+		exeDir := filepath.Dir(exePath)
+		os.Chdir(exeDir)
+	}
+
 	// Initialize config
 	config.Init()
 	cfg := config.Get()
 
 	// Initialize database
 	if err := database.Init(); err != nil {
+		if logger != nil {
+			logger.Error(fmt.Sprintf("Failed to initialize database: %v", err))
+		}
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
@@ -35,6 +63,8 @@ func main() {
 	r.SetFuncMap(template.FuncMap{
 		"formatBytes": formatBytes,
 	})
+	// Check if running in dev mode (relative path) or installed mode (absolute path might be needed, but for now assume CWD)
+	// Ideally we find where the executable is.
 	r.LoadHTMLGlob("templates/*")
 
 	// Serve static files
@@ -168,7 +198,7 @@ func main() {
 		api.POST("/wireguard/disconnect", handlers.DisconnectWireGuard)
 	}
 
-	// WebSocket routes (protected via query param token)
+	// WebSocket routes
 	r.GET("/ws/terminal", handlers.TerminalWS)
 	r.GET("/ws/installer/docker", handlers.InstallDockerWS)
 	r.GET("/ws/installer/kubernetes", handlers.InstallKubernetesWS)
@@ -177,10 +207,157 @@ func main() {
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	log.Printf("🚀 NetControl Containers starting on http://localhost%s", addr)
-	log.Printf("📦 Default login: admin / admin123")
 
-	if err := r.Run(addr); err != nil {
+	p.srv = &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	if err := p.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if logger != nil {
+			logger.Error(fmt.Sprintf("Failed to start server: %v", err))
+		}
 		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+func (p *program) Stop(s service.Service) error {
+	// Stop should not block. Return with a few seconds.
+	if p.srv != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := p.srv.Shutdown(ctx); err != nil {
+			log.Printf("Server forced to shutdown: %v", err)
+		}
+	}
+	return nil
+}
+
+func main() {
+	svcConfig := &service.Config{
+		Name:        "NetControlContainers",
+		DisplayName: "NetControl Containers Service",
+		Description: "Container Management VPS Panel",
+		Arguments:   []string{},
+	}
+
+	prg := &program{}
+	s, err := service.New(prg, svcConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logger, err = s.Logger(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Define flags
+	install := flag.Bool("install", false, "Install service")
+	uninstall := flag.Bool("uninstall", false, "Uninstall service")
+	start := flag.Bool("start", false, "Start service")
+	stop := flag.Bool("stop", false, "Stop service")
+	restart := flag.Bool("restart", false, "Restart service")
+
+	flag.Parse()
+
+	// Handle simple legacy commands or explicit service commands
+	if len(os.Args) > 1 {
+		verb := os.Args[1]
+		switch verb {
+		case "install":
+			err = s.Install()
+			if err != nil {
+				fmt.Printf("Failed to install service: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Service installed successfully.")
+			return
+		case "uninstall":
+			err = s.Uninstall()
+			if err != nil {
+				fmt.Printf("Failed to uninstall service: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Service uninstalled successfully.")
+			return
+		case "start":
+			err = s.Start()
+			if err != nil {
+				fmt.Printf("Failed to start service: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Service started.")
+			return
+		case "stop":
+			err = s.Stop()
+			if err != nil {
+				fmt.Printf("Failed to stop service: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Service stopped.")
+			return
+		case "restart":
+			err = s.Restart()
+			if err != nil {
+				fmt.Printf("Failed to restart service: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Service restarted.")
+			return
+		}
+	}
+
+	// Handle flags if args didn't match
+	if *install {
+		err = s.Install()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Service installed.")
+		return
+	}
+
+	if *uninstall {
+		err = s.Uninstall()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Service uninstalled.")
+		return
+	}
+
+	if *start {
+		err = s.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Service started.")
+		return
+	}
+
+	if *stop {
+		err = s.Stop()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Service stopped.")
+		return
+	}
+
+	if *restart {
+		err = s.Restart()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Service restarted.")
+		return
+	}
+
+	// Default: Run the service (foreground or background)
+	err = s.Run()
+	if err != nil {
+		logger.Error(err.Error())
 	}
 }
 
