@@ -3,10 +3,13 @@ package handlers
 import (
 	"bufio"
 	"net/http"
+	"sync"
+	"time"
 
 	"netcontrol-containers/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 func DockerStatus(c *gin.Context) {
@@ -58,6 +61,43 @@ func GetContainerStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+func InspectContainer(c *gin.Context) {
+	id := c.Param("id")
+	data, err := services.GetDockerService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	info, err := data.InspectContainer(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, info)
+}
+
+func CreateContainer(c *gin.Context) {
+	var req services.CreateContainerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	d, err := services.GetDockerService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	id, err := d.CreateContainer(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Container created successfully", "id": id})
 }
 
 func StartContainer(c *gin.Context) {
@@ -148,24 +188,6 @@ func GetContainerLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"logs": logs})
 }
 
-func InspectContainer(c *gin.Context) {
-	containerID := c.Param("id")
-
-	docker, err := services.GetDockerService()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	info, err := docker.InspectContainer(containerID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, info)
-}
-
 func ListImages(c *gin.Context) {
 	docker, err := services.GetDockerService()
 	if err != nil {
@@ -220,6 +242,22 @@ func PullImage(c *gin.Context) {
 	c.Writer.Flush()
 }
 
+func GetSystemUsage(c *gin.Context) {
+	docker, err := services.GetDockerService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	usage, err := docker.GetSystemUsage()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, usage)
+}
+
 func RemoveImage(c *gin.Context) {
 	imageID := c.Param("id")
 	force := c.Query("force") == "true"
@@ -236,4 +274,75 @@ func RemoveImage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Image removed successfully"})
+}
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func StreamDockerStats(c *gin.Context) {
+	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
+	defer ws.Close()
+
+	d, err := services.GetDockerService()
+	if err != nil {
+		return
+	}
+
+	previousStats := make(map[string]*services.ContainerStats)
+
+	for {
+		// Get all running containers
+		containers, err := d.ListContainers(false)
+		if err != nil {
+			break
+		}
+
+		// Collect stats
+		statsMap := make(map[string]*services.ContainerStats)
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+
+		for _, cont := range containers {
+			if cont.State != "running" {
+				continue
+			}
+			wg.Add(1)
+			go func(id string) {
+				defer wg.Done()
+				s, err := d.GetContainerStats(id)
+				if err == nil {
+					mu.Lock()
+					statsMap[id] = s
+					mu.Unlock()
+				}
+			}(cont.ID)
+		}
+		wg.Wait()
+
+		// Calculate CPU percentage based on previous stats
+		for id, s := range statsMap {
+			if prev, ok := previousStats[id]; ok {
+				cpuDelta := float64(s.CPUTotalUsage - prev.CPUTotalUsage)
+				systemDelta := float64(s.SystemUsage - prev.SystemUsage)
+
+				if systemDelta > 0 && cpuDelta > 0 {
+					s.CPUPercent = (cpuDelta / systemDelta) * float64(s.OnlineCPUs) * 100.0
+				}
+			}
+			// Update previous stats
+			previousStats[id] = s
+		}
+
+		if err := ws.WriteJSON(statsMap); err != nil {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
 }

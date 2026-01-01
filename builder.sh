@@ -19,7 +19,7 @@ fi
 
 # Build for Linux (amd64)
 echo "🐧 Building for Linux (amd64)..."
-GOOS=linux GOARCH=amd64 go build -o build/netcontrol-container .
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o build/netcontrol-container .
 if [ $? -eq 0 ]; then
     echo "✅ Linux build successful: build/netcontrol-container"
 else

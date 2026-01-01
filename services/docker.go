@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 type DockerService struct {
@@ -16,15 +18,17 @@ type DockerService struct {
 }
 
 type ContainerInfo struct {
-	ID      string            `json:"id"`
-	Name    string            `json:"name"`
-	Image   string            `json:"image"`
-	State   string            `json:"state"`
-	Status  string            `json:"status"`
-	Created int64             `json:"created"`
-	Ports   []PortMapping     `json:"ports"`
-	Labels  map[string]string `json:"labels"`
-	Stats   *ContainerStats   `json:"stats,omitempty"`
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Image    string            `json:"image"`
+	State    string            `json:"state"`
+	Status   string            `json:"status"`
+	Created  int64             `json:"created"`
+	Ports    []PortMapping     `json:"ports"`
+	Networks []string          `json:"networks"`
+	IP       string            `json:"ip"`
+	Labels   map[string]string `json:"labels"`
+	Stats    *ContainerStats   `json:"stats,omitempty"`
 }
 
 type PortMapping struct {
@@ -41,6 +45,10 @@ type ContainerStats struct {
 	MemoryPercent float64 `json:"memory_percent"`
 	NetworkRx     uint64  `json:"network_rx"`
 	NetworkTx     uint64  `json:"network_tx"`
+	// Raw stats for stateful calculation
+	CPUTotalUsage uint64 `json:"cpu_total_usage"`
+	SystemUsage   uint64 `json:"system_usage"`
+	OnlineCPUs    int    `json:"online_cpus"`
 }
 
 type ImageInfo struct {
@@ -48,6 +56,25 @@ type ImageInfo struct {
 	RepoTags []string `json:"repo_tags"`
 	Size     int64    `json:"size"`
 	Created  int64    `json:"created"`
+}
+
+type CreateContainerRequest struct {
+	Name     string   `json:"name"`
+	Image    string   `json:"image"`
+	Ports    []string `json:"ports"` // "8080:80/tcp" or just "8080:80"
+	Env      []string `json:"env"`
+	MemoryMB int64    `json:"memory_mb"`
+	CPUCores float64  `json:"cpu_cores"`
+}
+
+type SystemUsage struct {
+	Containers     int   `json:"containers"`
+	ContainersSize int64 `json:"containers_size"`
+	Images         int   `json:"images"`
+	ImagesSize     int64 `json:"images_size"`
+	Volumes        int   `json:"volumes"`
+	VolumesSize    int64 `json:"volumes_size"`
+	Networks       int   `json:"networks"`
 }
 
 var dockerService *DockerService
@@ -102,18 +129,43 @@ func (d *DockerService) ListContainers(all bool) ([]ContainerInfo, error) {
 		}
 
 		result = append(result, ContainerInfo{
-			ID:      c.ID[:12],
-			Name:    name,
-			Image:   c.Image,
-			State:   c.State,
-			Status:  c.Status,
-			Created: c.Created,
-			Ports:   ports,
-			Labels:  c.Labels,
+			ID:       c.ID[:12],
+			Name:     name,
+			Image:    c.Image,
+			State:    c.State,
+			Status:   c.Status,
+			Created:  c.Created,
+			Ports:    ports,
+			Networks: getNetworkNames(c.NetworkSettings),
+			IP:       getIPAddress(c.NetworkSettings),
+			Labels:   c.Labels,
 		})
 	}
 
 	return result, nil
+}
+
+func getIPAddress(settings *types.SummaryNetworkSettings) string {
+	if settings == nil || settings.Networks == nil {
+		return ""
+	}
+	for _, net := range settings.Networks {
+		if net.IPAddress != "" {
+			return net.IPAddress
+		}
+	}
+	return ""
+}
+
+func getNetworkNames(settings *types.SummaryNetworkSettings) []string {
+	if settings == nil || settings.Networks == nil {
+		return []string{}
+	}
+	var networks []string
+	for name := range settings.Networks {
+		networks = append(networks, name)
+	}
+	return networks
 }
 
 func (d *DockerService) GetContainerStats(containerID string) (*ContainerStats, error) {
@@ -132,6 +184,7 @@ func (d *DockerService) GetContainerStats(containerID string) (*ContainerStats, 
 				PercpuUsage []uint64 `json:"percpu_usage"`
 			} `json:"cpu_usage"`
 			SystemUsage uint64 `json:"system_cpu_usage"`
+			OnlineCPUs  uint32 `json:"online_cpus"`
 		} `json:"cpu_stats"`
 		PreCPUStats struct {
 			CPUUsage struct {
@@ -171,6 +224,11 @@ func (d *DockerService) GetContainerStats(containerID string) (*ContainerStats, 
 		networkTx += net.TxBytes
 	}
 
+	onlineCPUs := int(statsJSON.CPUStats.OnlineCPUs)
+	if onlineCPUs == 0 {
+		onlineCPUs = len(statsJSON.CPUStats.CPUUsage.PercpuUsage)
+	}
+
 	return &ContainerStats{
 		CPUPercent:    cpuPercent,
 		MemoryUsage:   statsJSON.MemoryStats.Usage,
@@ -178,6 +236,9 @@ func (d *DockerService) GetContainerStats(containerID string) (*ContainerStats, 
 		MemoryPercent: memoryPercent,
 		NetworkRx:     networkRx,
 		NetworkTx:     networkTx,
+		CPUTotalUsage: statsJSON.CPUStats.CPUUsage.TotalUsage,
+		SystemUsage:   statsJSON.CPUStats.SystemUsage,
+		OnlineCPUs:    onlineCPUs,
 	}, nil
 }
 
@@ -260,4 +321,122 @@ func (d *DockerService) RemoveImage(imageID string, force bool) error {
 func (d *DockerService) InspectContainer(containerID string) (interface{}, error) {
 	ctx := context.Background()
 	return d.client.ContainerInspect(ctx, containerID)
+}
+
+func (d *DockerService) CreateContainer(req CreateContainerRequest) (string, error) {
+	ctx := context.Background()
+
+	// Parse Ports
+	exposedPorts := make(map[string]struct{})                            // nat.PortSet
+	portBindings := make(map[string][]struct{ HostIP, HostPort string }) // nat.PortMap
+
+	for _, p := range req.Ports {
+		// format: host:container/proto
+		parts := parsePortSpec(p)
+		if parts != nil {
+			portKey := parts.ContainerPort + "/" + parts.Protocol
+			exposedPorts[portKey] = struct{}{}
+			portBindings[portKey] = []struct{ HostIP, HostPort string }{
+				{HostIP: "", HostPort: parts.HostPort},
+			}
+		}
+	}
+
+	config := &container.Config{
+		Image:        req.Image,
+		Env:          req.Env,
+		ExposedPorts: make(nat.PortSet),
+	}
+	for k := range exposedPorts {
+		config.ExposedPorts[nat.Port(k)] = struct{}{}
+	}
+
+	hostConfig := &container.HostConfig{
+		PortBindings: make(nat.PortMap),
+		Resources: container.Resources{
+			Memory:   req.MemoryMB * 1024 * 1024,
+			NanoCPUs: int64(req.CPUCores * 1e9),
+		},
+	}
+
+	for k, v := range portBindings {
+		var bindings []nat.PortBinding
+		for _, b := range v {
+			bindings = append(bindings, nat.PortBinding{HostIP: b.HostIP, HostPort: b.HostPort})
+		}
+		hostConfig.PortBindings[nat.Port(k)] = bindings
+	}
+
+	resp, err := d.client.ContainerCreate(ctx, config, hostConfig, nil, nil, req.Name)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.ID, nil
+}
+
+type PortParts struct {
+	HostPort      string
+	ContainerPort string
+	Protocol      string
+}
+
+func parsePortSpec(spec string) *PortParts {
+	// Simple parser for "8080:80" or "8080:80/tcp"
+	// Only handles simple host:container format
+	if spec == "" {
+		return nil
+	}
+
+	protocol := "tcp"
+	// Check protocol
+	parts := strings.Split(spec, "/")
+	if len(parts) > 1 {
+		protocol = parts[1]
+		spec = parts[0]
+	}
+
+	// Check ports
+	ports := strings.Split(spec, ":")
+	if len(ports) != 2 {
+		return nil
+	}
+
+	return &PortParts{
+		HostPort:      ports[0],
+		ContainerPort: ports[1],
+		Protocol:      protocol,
+	}
+}
+func (d *DockerService) GetSystemUsage() (*SystemUsage, error) {
+	ctx := context.Background()
+	usage, err := d.client.DiskUsage(ctx, types.DiskUsageOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var imagesSize int64
+	for _, img := range usage.Images {
+		imagesSize += img.Size
+	}
+
+	var volumesSize int64
+	for _, vol := range usage.Volumes {
+		if vol.UsageData != nil {
+			volumesSize += vol.UsageData.Size
+		}
+	}
+
+	// Also get networks count
+	networks, _ := d.client.NetworkList(ctx, types.NetworkListOptions{})
+
+	return &SystemUsage{
+		Containers:     len(usage.Containers),
+		ContainersSize: usage.LayersSize,
+		Images:         len(usage.Images),
+		ImagesSize:     imagesSize,
+		Volumes:        len(usage.Volumes),
+		VolumesSize:    volumesSize,
+		Networks:       len(networks),
+	}, nil
 }

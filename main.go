@@ -102,10 +102,7 @@ func (p *program) run() {
 			username, _ := c.Get("username")
 			c.HTML(http.StatusOK, "kubernetes.html", gin.H{"Username": username})
 		})
-		pages.GET("/installer", func(c *gin.Context) {
-			username, _ := c.Get("username")
-			c.HTML(http.StatusOK, "installer.html", gin.H{"Username": username})
-		})
+
 		pages.GET("/files", func(c *gin.Context) {
 			username, _ := c.Get("username")
 			c.HTML(http.StatusOK, "files.html", gin.H{"Username": username})
@@ -141,10 +138,13 @@ func (p *program) run() {
 
 		// Docker
 		api.GET("/docker/status", handlers.DockerStatus)
+		api.GET("/docker/system/usage", handlers.GetSystemUsage)
+		api.GET("/docker/system/ws", handlers.StreamDockerStats)
 		api.GET("/docker/containers", handlers.ListContainers)
 		api.GET("/docker/containers/:id/stats", handlers.GetContainerStats)
 		api.GET("/docker/containers/:id/logs", handlers.GetContainerLogs)
 		api.GET("/docker/containers/:id/inspect", handlers.InspectContainer)
+		api.POST("/docker/containers", handlers.CreateContainer)
 		api.POST("/docker/containers/:id/start", handlers.StartContainer)
 		api.POST("/docker/containers/:id/stop", handlers.StopContainer)
 		api.POST("/docker/containers/:id/restart", handlers.RestartContainer)
@@ -155,6 +155,7 @@ func (p *program) run() {
 
 		// Kubernetes
 		api.GET("/kubernetes/status", handlers.KubernetesStatus)
+		api.GET("/kubernetes/overview", handlers.GetClusterOverview)
 		api.GET("/kubernetes/namespaces", handlers.ListNamespaces)
 		api.GET("/kubernetes/pods", handlers.ListPods)
 		api.GET("/kubernetes/pods/:name/logs", handlers.GetPodLogs)
@@ -167,10 +168,10 @@ func (p *program) run() {
 		// Installer
 		api.GET("/installer/status", handlers.GetSoftwareStatus)
 		api.GET("/installer/progress", handlers.GetInstallStatus)
+		api.POST("/installer/unlock", handlers.ForceUnlock)
 		api.POST("/installer/docker", handlers.InstallDocker)
 		api.POST("/installer/kubernetes", handlers.InstallKubernetes)
-		api.DELETE("/installer/docker", handlers.UninstallDocker)
-		api.DELETE("/installer/kubernetes", handlers.UninstallKubernetes)
+
 		api.POST("/installer/restart/:service", handlers.RestartSoftware)
 
 		// Files
@@ -181,6 +182,7 @@ func (p *program) run() {
 		api.POST("/files/create", handlers.CreateFile)
 		api.DELETE("/files", handlers.DeleteFile)
 		api.POST("/files/rename", handlers.RenameFile)
+		api.POST("/files/chmod", handlers.ChmodFile)
 		api.POST("/files/copy", handlers.CopyFile)
 		api.POST("/files/upload", handlers.UploadFile)
 		api.GET("/files/download", handlers.DownloadFile)
@@ -203,6 +205,8 @@ func (p *program) run() {
 	r.GET("/ws/installer/docker", handlers.InstallDockerWS)
 	r.GET("/ws/installer/kubernetes", handlers.InstallKubernetesWS)
 	r.GET("/ws/installer/setup-k8s", handlers.SetupKubernetesWS)
+	r.GET("/ws/installer/docker/uninstall", handlers.UninstallDockerWS)
+	r.GET("/ws/installer/kubernetes/uninstall", handlers.UninstallKubernetesWS)
 
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Port)

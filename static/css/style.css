@@ -133,7 +133,6 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -288,9 +287,17 @@ body {
     transition: width 0.5s ease;
 }
 
-.cpu-progress { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
-.memory-progress { background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); }
-.storage-progress { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); }
+.cpu-progress {
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+}
+
+.memory-progress {
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+}
+
+.storage-progress {
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+}
 
 /* Section Cards */
 .section-card {
@@ -648,7 +655,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Empty State */
@@ -698,9 +707,17 @@ body {
     border-radius: 50%;
 }
 
-.terminal-dot.red { background: #ff5f56; }
-.terminal-dot.yellow { background: #ffbd2e; }
-.terminal-dot.green { background: #27c93f; }
+.terminal-dot.red {
+    background: #ff5f56;
+}
+
+.terminal-dot.yellow {
+    background: #ffbd2e;
+}
+
+.terminal-dot.green {
+    background: #27c93f;
+}
 
 #terminal {
     height: calc(100% - 44px);
@@ -787,27 +804,27 @@ body {
     .sidebar {
         width: 80px;
     }
-    
+
     .sidebar .logo span,
     .sidebar .nav-item span,
     .sidebar .user-info span {
         display: none;
     }
-    
+
     .sidebar-header {
         padding: 1rem;
         text-align: center;
     }
-    
+
     .nav-item {
         justify-content: center;
         padding: 1rem;
     }
-    
+
     .main-content {
         margin-left: 80px;
     }
-    
+
     .disk-item {
         grid-template-columns: 1fr;
         gap: 0.5rem;
@@ -818,11 +835,11 @@ body {
     .sidebar {
         display: none;
     }
-    
+
     .main-content {
         margin-left: 0;
     }
-    
+
     .content {
         padding: 1rem;
     }

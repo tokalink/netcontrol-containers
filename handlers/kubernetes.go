@@ -182,3 +182,21 @@ func DeletePod(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Pod deleted successfully"})
 }
+
+func GetClusterOverview(c *gin.Context) {
+	namespace := c.DefaultQuery("namespace", "default")
+
+	k8s, err := services.GetKubernetesService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	stats, err := k8s.GetClusterStats(namespace)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}

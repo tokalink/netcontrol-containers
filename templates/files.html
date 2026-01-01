@@ -6,6 +6,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Explorer - NetControl Containers</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Editor Styles */
+        .editor-container {
+            display: flex;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #1e1e1e;
+            height: 500px;
+            font-family: 'Fira Code', 'item-monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .editor-gutter {
+            background: #252526;
+            color: #858585;
+            padding: 10px 5px;
+            text-align: right;
+            min-width: 40px;
+            user-select: none;
+            overflow: hidden;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .editor-content {
+            flex: 1;
+            background: transparent;
+            color: #d4d4d4;
+            border: none;
+            resize: none;
+            outline: none;
+            padding: 10px;
+            white-space: pre;
+            overflow: auto;
+            tab-size: 4;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .modal {
+            max-width: 800px;
+            /* Wider for editor */
+        }
+    </style>
 </head>
 
 <body>
@@ -36,11 +83,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg><span>Kubernetes</span></a>
-                <a href="/installer" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg><span>Installer</span></a>
+
                 <a href="/files" class="nav-item active"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -103,8 +146,11 @@
         </main>
     </div>
 
+    <!-- Modals -->
+
+    <!-- New Folder -->
     <div class="modal-overlay" id="newFolderModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 400px;">
             <div class="modal-header">
                 <h3>New Folder</h3><button class="modal-close" onclick="hideModal('newFolderModal')">&times;</button>
             </div>
@@ -121,8 +167,9 @@
         </div>
     </div>
 
+    <!-- Upload -->
     <div class="modal-overlay" id="uploadModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 400px;">
             <div class="modal-header">
                 <h3>Upload File</h3><button class="modal-close" onclick="hideModal('uploadModal')">&times;</button>
             </div>
@@ -139,9 +186,84 @@
         </div>
     </div>
 
+    <!-- Rename -->
+    <div class="modal-overlay" id="renameModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Rename Item</h3><button class="modal-close" onclick="hideModal('renameModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="renameOldPath">
+                <div class="form-group">
+                    <label>New Name</label>
+                    <input type="text" class="form-control" id="renameNewName" placeholder="Enter new name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('renameModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="doRename()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="modal-overlay" id="chmodModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Change Permissions</h3><button class="modal-close"
+                    onclick="hideModal('chmodModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="chmodPath">
+                <div class="form-group">
+                    <label>Mode (Octal, e.g. 0755)</label>
+                    <input type="text" class="form-control" id="chmodMode" placeholder="0755">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('chmodModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="doChmod()">Change</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor -->
+    <div class="modal-overlay" id="editorModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit File</h3><button class="modal-close" onclick="hideModal('editorModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editorPath">
+                <div class="editor-container">
+                    <div class="editor-gutter" id="editorGutter">1</div>
+                    <textarea class="editor-content" id="editorContent" spellcheck="false"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('editorModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveFile()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/app.js"></script>
     <script>
         let currentPath = '/';
+
+        // Editor Logic
+        const editorContent = document.getElementById('editorContent');
+        const editorGutter = document.getElementById('editorGutter');
+
+        editorContent.addEventListener('input', updateLineNumbers);
+        editorContent.addEventListener('scroll', () => {
+            editorGutter.scrollTop = editorContent.scrollTop;
+        });
+
+        function updateLineNumbers() {
+            const lines = editorContent.value.split('\n').length;
+            editorGutter.innerHTML = Array(lines).fill(0).map((_, i) => i + 1).join('<br>');
+        }
 
         async function loadDrives() {
             const data = await NetControl.api.get('/api/files/drives');
@@ -166,13 +288,16 @@
             }
 
             document.getElementById('fileList').innerHTML = data.files.map(f => `
-                <div class="file-item" ondblclick="${f.is_dir ? `navigateTo('${f.path.replace(/\\/g, '\\\\')}')` : `viewFile('${f.path.replace(/\\/g, '\\\\')}')`}">
+                <div class="file-item" ondblclick="${f.is_dir ? `navigateTo('${f.path.replace(/\\/g, '\\\\')}')` : `openEditor('${f.path.replace(/\\/g, '\\\\')}', '${f.extension}')`}">
                     <span class="file-icon">${f.is_dir ? '📁' : getFileIcon(f.extension)}</span>
                     <span class="file-name">${f.name}</span>
                     <span class="file-size">${f.is_dir ? '' : formatBytes(f.size)}</span>
                     <div class="action-buttons">
-                        ${!f.is_dir ? `<button class="btn btn-sm btn-secondary" onclick="downloadFile('${f.path.replace(/\\/g, '\\\\')}')">⬇️</button>` : ''}
-                        <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.path.replace(/\\/g, '\\\\')}')">🗑️</button>
+                        ${!f.is_dir ? `<button class="btn btn-sm btn-secondary" title="Edit" onclick="openEditor('${f.path.replace(/\\/g, '\\\\')}', '${f.extension}')">📝</button>` : ''}
+                        ${!f.is_dir ? `<button class="btn btn-sm btn-secondary" title="Download" onclick="downloadFile('${f.path.replace(/\\/g, '\\\\')}')">⬇️</button>` : ''}
+                        <button class="btn btn-sm btn-warning" title="Rename" onclick="openRename('${f.path.replace(/\\/g, '\\\\')}', '${f.name}')">✏️</button>
+                        <button class="btn btn-sm btn-info" title="Permissions" onclick="openChmod('${f.path.replace(/\\/g, '\\\\')}', '${f.mode}')">🔒</button>
+                        <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteFile('${f.path.replace(/\\/g, '\\\\')}')">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -193,10 +318,29 @@
         }
 
         function updateBreadcrumb() {
-            const parts = currentPath.split(/[\/\\]/).filter(p => p);
+            // Fix regex to work on both Unix and Windows
+            const isWindows = currentPath.indexOf(':') !== -1;
+            const parts = currentPath.split(isWindows ? '\\' : '/').filter(p => p);
+
             let path = '';
+            let validParts = [];
+
+            // Handle drive letter specially for Windows
+            if (isWindows && currentPath.includes(':')) {
+                // Already handled by basic split usually, but let's be safe
+            }
+
             const crumbs = parts.map((p, i) => {
-                path += (i === 0 && currentPath.includes(':')) ? p + '\\' : '/' + p;
+                if (isWindows) {
+                    if (i === 0) {
+                        path = p + '\\';
+                    } else {
+                        path = path.endsWith('\\') ? path + p : path + '\\' + p;
+                    }
+                } else {
+                    path = path === '/' ? '/' + p : path + '/' + p;
+                }
+
                 return `<span onclick="navigateTo('${path.replace(/\\/g, '\\\\')}')" style="cursor:pointer;color:var(--accent-blue);">${p}</span>`;
             });
             document.getElementById('breadcrumb').innerHTML = crumbs.join(' / ') || '/';
@@ -208,11 +352,17 @@
         }
 
         function goUp() {
-            const parts = currentPath.split(/[\/\\]/).filter(p => p);
+            const isWindows = currentPath.indexOf(':') !== -1;
+            const parts = currentPath.split(isWindows ? /\\/ : /\//).filter(p => p);
+
             if (parts.length > 1) {
                 parts.pop();
-                currentPath = parts.join(currentPath.includes(':') ? '\\' : '/');
-                if (currentPath.includes(':') && !currentPath.endsWith('\\')) currentPath += '\\';
+                currentPath = parts.join(isWindows ? '\\' : '/');
+                if (isWindows && !currentPath.endsWith('\\')) currentPath += '\\';
+                if (!isWindows && !currentPath.startsWith('/')) currentPath = '/' + currentPath;
+                loadFiles();
+            } else if (parts.length === 1 && !isWindows) {
+                currentPath = '/';
                 loadFiles();
             }
         }
@@ -220,6 +370,8 @@
         function refresh() {
             loadFiles();
         }
+
+        // --- Actions ---
 
         function showNewFolderModal() {
             document.getElementById('newFolderName').value = '';
@@ -229,8 +381,11 @@
         async function createFolder() {
             const name = document.getElementById('newFolderName').value.trim();
             if (!name) return;
-            const sep = currentPath.includes(':') ? '\\' : '/';
-            await NetControl.api.post('/api/files/create', { path: currentPath + sep + name, is_dir: true });
+            const isWindows = currentPath.indexOf(':') !== -1;
+            const sep = isWindows ? '\\' : '/';
+            let target = currentPath.endsWith(sep) ? currentPath + name : currentPath + sep + name;
+
+            await NetControl.api.post('/api/files/create', { path: target, is_dir: true });
             hideModal('newFolderModal');
             loadFiles();
         }
@@ -258,15 +413,95 @@
         }
 
         async function deleteFile(path) {
-            if (await NetControl.confirmAction('Delete this file/folder?')) {
+            if (await NetControl.confirmAction('Delete this item?')) {
                 await NetControl.api.delete(`/api/files?path=${encodeURIComponent(path)}`);
                 loadFiles();
             }
         }
 
-        async function viewFile(path) {
-            const data = await NetControl.api.get(`/api/files/content?path=${encodeURIComponent(path)}`);
-            alert('File content:\n\n' + (data.content || '').substring(0, 2000));
+        // --- Rename ---
+        function openRename(path, name) {
+            document.getElementById('renameOldPath').value = path;
+            document.getElementById('renameNewName').value = name;
+            showModal('renameModal');
+        }
+
+        async function doRename() {
+            const oldPath = document.getElementById('renameOldPath').value;
+            const newName = document.getElementById('renameNewName').value;
+            if (!newName) return;
+
+            const isWindows = oldPath.indexOf(':') !== -1;
+            const sep = isWindows ? '\\' : '/';
+            // Get directory of old path
+            const dir = oldPath.substring(0, oldPath.lastIndexOf(sep));
+            const newPath = dir + sep + newName;
+
+            try {
+                await NetControl.api.post('/api/files/rename', { old_path: oldPath, new_path: newPath });
+                hideModal('renameModal');
+                loadFiles();
+            } catch (e) {
+                alert('Rename failed: ' + e.message);
+            }
+        }
+
+        // --- Permissions ---
+        function openChmod(path, modeStr) {
+            // modeStr usually comes as "-rwxr-xr-x" or similar from os.FileMode.String()
+            // We need to support inputting octal. The placeholder is 0755.
+            // Converting symbolic to octal is complex in JS, so we'll just let user enter new octal.
+            document.getElementById('chmodPath').value = path;
+            document.getElementById('chmodMode').value = ''; // Reset, or try to guess? Better empty.
+            showModal('chmodModal');
+        }
+
+        async function doChmod() {
+            const path = document.getElementById('chmodPath').value;
+            const mode = document.getElementById('chmodMode').value;
+            if (!mode) return;
+
+            try {
+                await NetControl.api.post('/api/files/chmod', { path: path, mode: mode });
+                hideModal('chmodModal');
+                loadFiles(); // Mode might update
+            } catch (e) {
+                alert('Change permissions failed: ' + e.message);
+            }
+        }
+
+        // --- Editor ---
+        const TEXT_EXTENSIONS = ['txt', 'md', 'json', 'xml', 'js', 'ts', 'go', 'py', 'html', 'css', 'php', 'sh', 'bat', 'yaml', 'yml', 'toml', 'ini', 'conf', 'cfg', 'log'];
+
+        async function openEditor(path, ext) {
+            // Basic check if text file
+            if (!TEXT_EXTENSIONS.includes(ext.toLowerCase())) {
+                if (!confirm('This file may not be a text file. Open anyway?')) return;
+            }
+
+            try {
+                const data = await NetControl.api.get(`/api/files/content?path=${encodeURIComponent(path)}`);
+                document.getElementById('editorPath').value = path;
+                document.getElementById('editorContent').value = data.content || '';
+                updateLineNumbers();
+                showModal('editorModal');
+            } catch (e) {
+                alert('Failed to load file: ' + e.message);
+            }
+        }
+
+        async function saveFile() {
+            const path = document.getElementById('editorPath').value;
+            const content = document.getElementById('editorContent').value;
+
+            try {
+                await NetControl.api.post('/api/files/content', { path: path, content: content });
+                NetControl.showToast('File saved successfully!', 'success');
+                hideModal('editorModal');
+                loadFiles();
+            } catch (e) {
+                alert('Failed to save: ' + e.message);
+            }
         }
 
         loadDrives();

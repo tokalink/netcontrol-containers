@@ -131,36 +131,70 @@ func InstallKubernetesWS(c *gin.Context) {
 	}
 }
 
-func UninstallDocker(c *gin.Context) {
-	installer := services.GetInstallerService()
-
-	status := installer.GetStatus()
-	if status.IsInstalling {
-		c.JSON(http.StatusConflict, gin.H{"error": "Another installation is in progress"})
+func UninstallDockerWS(c *gin.Context) {
+	conn, err := installerUpgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
 		return
 	}
+	defer conn.Close()
+
+	var mu sync.Mutex
+	writeJSON := func(v interface{}) error {
+		mu.Lock()
+		defer mu.Unlock()
+		return conn.WriteJSON(v)
+	}
+
+	installer := services.GetInstallerService()
+	progressChan := make(chan string, 100)
 
 	go func() {
-		installer.UninstallDocker(nil)
+		for msg := range progressChan {
+			writeJSON(gin.H{"message": msg})
+		}
 	}()
 
-	c.JSON(http.StatusOK, gin.H{"message": "Docker uninstallation started"})
+	err = installer.UninstallDocker(progressChan)
+	close(progressChan)
+
+	if err != nil {
+		writeJSON(gin.H{"error": err.Error(), "complete": true})
+	} else {
+		writeJSON(gin.H{"message": "Uninstallation complete", "complete": true, "success": true})
+	}
 }
 
-func UninstallKubernetes(c *gin.Context) {
-	installer := services.GetInstallerService()
-
-	status := installer.GetStatus()
-	if status.IsInstalling {
-		c.JSON(http.StatusConflict, gin.H{"error": "Another operation is in progress"})
+func UninstallKubernetesWS(c *gin.Context) {
+	conn, err := installerUpgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
 		return
 	}
+	defer conn.Close()
+
+	var mu sync.Mutex
+	writeJSON := func(v interface{}) error {
+		mu.Lock()
+		defer mu.Unlock()
+		return conn.WriteJSON(v)
+	}
+
+	installer := services.GetInstallerService()
+	progressChan := make(chan string, 100)
 
 	go func() {
-		installer.UninstallKubernetes(nil)
+		for msg := range progressChan {
+			writeJSON(gin.H{"message": msg})
+		}
 	}()
 
-	c.JSON(http.StatusOK, gin.H{"message": "Kubernetes uninstallation started"})
+	err = installer.UninstallKubernetes(progressChan)
+	close(progressChan)
+
+	if err != nil {
+		writeJSON(gin.H{"error": err.Error(), "complete": true})
+	} else {
+		writeJSON(gin.H{"message": "Uninstallation complete", "complete": true, "success": true})
+	}
 }
 
 func RestartSoftware(c *gin.Context) {
@@ -178,6 +212,12 @@ func RestartSoftware(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": serviceName + " restarted successfully"})
+}
+
+func ForceUnlock(c *gin.Context) {
+	installer := services.GetInstallerService()
+	installer.ResetLock()
+	c.JSON(http.StatusOK, gin.H{"message": "Installation lock cleared"})
 }
 
 func SetupKubernetesWS(c *gin.Context) {

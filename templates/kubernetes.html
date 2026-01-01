@@ -6,6 +6,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kubernetes - NetControl Containers</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Tab Styling */
+        .tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            padding-bottom: 0;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            padding: 10px 5px;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        /* Settings specific styles */
+        .settings-panel {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-row:last-child {
+            border-bottom: none;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-description {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            /* Fallback or variable */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card.primary {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-card.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .stat-card.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .stat-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 
 <body>
@@ -36,11 +144,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg><span>Kubernetes</span></a>
-                <a href="/installer" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg><span>Installer</span></a>
                 <a href="/files" class="nav-item"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -86,30 +189,65 @@
                     <select id="namespaceSelect" class="form-control" style="width: 200px;" onchange="loadK8sData()">
                         <option value="default">default</option>
                     </select>
-                    <button class="btn btn-secondary" onclick="loadK8sData()">Refresh</button>
+                    <button class="btn btn-secondary" onclick="checkK8s()">Refresh</button>
                 </div>
             </header>
 
             <div class="content">
-                <div id="k8sNotAvailable" class="section-card" style="display: none;">
-                    <div class="empty-state">
-                        <h3>Kubernetes Not Available</h3>
-                        <p>Kubernetes is not configured or not accessible. Go to <a href="/installer">Installer</a> to
-                            install Kubernetes.</p>
-                    </div>
-                </div>
-
                 <div id="k8sContent">
                     <div class="tabs">
+                        <button class="tab" onclick="switchTab('overview')">Overview</button>
                         <button class="tab active" onclick="switchTab('pods')">Pods</button>
                         <button class="tab" onclick="switchTab('deployments')">Deployments</button>
                         <button class="tab" onclick="switchTab('services')">Services</button>
+                        <button class="tab" onclick="switchTab('settings')">Settings</button>
+                    </div>
+
+                    <!-- Overview (Placeholder) -->
+                    <!-- Overview -->
+                    <div id="overviewTab" class="tab-content" style="display: none;">
+                        <div class="stats-grid">
+                            <div class="stat-card primary">
+                                <span class="stat-label">Total Nodes</span>
+                                <div class="stat-value" id="ovNodes">-</div>
+                                <span class="stat-sub" id="ovNodesReady">- Ready</span>
+                            </div>
+                            <div class="stat-card success">
+                                <span class="stat-label">Running Pods</span>
+                                <div class="stat-value" id="ovPodsRunning">-</div>
+                                <span class="stat-sub" id="ovPodsTotal">- Total</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Deployments</span>
+                                <div class="stat-value" id="ovDeployments">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Services</span>
+                                <div class="stat-value" id="ovServices">-</div>
+                            </div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <span class="stat-label">CPU Capacity</span>
+                                <div class="stat-value" id="ovCPU" style="font-size: 1.5rem;">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Memory Capacity</span>
+                                <div class="stat-value" id="ovMem" style="font-size: 1.5rem;">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">K8s Version</span>
+                                <div class="stat-value" id="ovVersion" style="font-size: 1.2rem;">-</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="podsTab" class="tab-content">
                         <div class="section-card">
                             <h2>Pods</h2>
-                            <div id="podList"></div>
+                            <div id="podList">
+                                <div class="empty-state"><span class="badge badge-warning">Loading...</span></div>
+                            </div>
                         </div>
                     </div>
 
@@ -126,15 +264,78 @@
                             <div id="serviceList"></div>
                         </div>
                     </div>
+
+                    <!-- Settings (Installer) -->
+                    <div id="settingsTab" class="tab-content" style="display: none;">
+                        <div class="settings-panel">
+                            <h2>Kubernetes Settings</h2>
+
+                            <!-- Status -->
+                            <div class="form-row">
+                                <div>
+                                    <div class="form-label">Cluster Status</div>
+                                    <div class="form-description">Current status of the Kubernetes cluster</div>
+                                </div>
+                                <div id="k8sStatus" class="status-info">
+                                    <span class="badge badge-warning">Checking...</span>
+                                </div>
+                            </div>
+
+                            <!-- Version -->
+                            <div class="form-row">
+                                <div>
+                                    <div class="form-label">Version</div>
+                                    <div class="form-description">Installed Kubernetes version</div>
+                                </div>
+                                <div id="k8sVersion" style="color: var(--text-secondary);">
+                                    -
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="form-row">
+                                <div>
+                                    <div class="form-label">Actions</div>
+                                    <div class="form-description">Manage Kubernetes service and cluster</div>
+                                </div>
+                                <div id="k8sButtons" style="display: flex; gap: 10px;">
+                                    <button class="btn btn-primary" id="installK8sBtn" onclick="installK8s()"
+                                        style="display: none;">Install Kubernetes</button>
+                                    <button class="btn btn-primary" id="setupK8sBtn" onclick="setupK8s()"
+                                        style="display: none;">Setup Cluster</button>
+                                    <button class="btn btn-warning" id="restartK8sBtn"
+                                        onclick="restartSoftware('kubelet')" style="display: none;">Restart
+                                        Kubelet</button>
+                                    <button class="btn btn-secondary" onclick="forceUnlock()">Force Unlock</button>
+                                    <button class="btn btn-danger" id="uninstallK8sBtn" onclick="uninstallKubernetes()"
+                                        style="display: none;">Uninstall</button>
+                                </div>
+                            </div>
+
+                            <!-- Installation Progress Panel -->
+                            <div id="installProgress"
+                                style="display: none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                                <h3>Operation Progress</h3>
+                                <div class="install-progress">
+                                    <div class="install-progress-bar">
+                                        <div class="install-progress-fill" id="progressBar" style="width: 0%;"></div>
+                                    </div>
+                                    <div class="install-status" id="progressStatus">Starting...</div>
+                                </div>
+                                <div class="log-viewer" id="installLogs" style="margin-top: 1rem; height: 200px;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Logs Modal -->
     <div class="modal-overlay" id="logsModal">
         <div class="modal" style="max-width: 800px;">
             <div class="modal-header">
-                <h3>Pod Logs</h3>
+                <h3>Logs</h3>
                 <button class="modal-close" onclick="hideModal('logsModal')">&times;</button>
             </div>
             <div class="modal-body">
@@ -155,28 +356,105 @@
             document.getElementById(tab + 'Tab').style.display = 'block';
         }
 
+        // --- Installer Logic & Check ---
+
         async function checkK8s() {
-            const data = await NetControl.api.get('/api/kubernetes/status');
-            k8sAvailable = data && data.available;
-            document.getElementById('k8sNotAvailable').style.display = k8sAvailable ? 'none' : 'block';
-            document.getElementById('k8sContent').style.display = k8sAvailable ? 'block' : 'none';
-            if (k8sAvailable) {
-                await loadNamespaces();
-                loadK8sData();
+            try {
+                const data = await NetControl.api.get('/api/installer/status');
+
+                // Settings Tab UI Update
+                const k8sStatusEl = document.getElementById('k8sStatus');
+                const k8sVersionEl = document.getElementById('k8sVersion');
+                const installK8sBtn = document.getElementById('installK8sBtn');
+                const uninstallK8sBtn = document.getElementById('uninstallK8sBtn');
+                const restartK8sBtn = document.getElementById('restartK8sBtn');
+                const setupK8sBtn = document.getElementById('setupK8sBtn'); // Ensure this button exists in HTML
+
+                if (data.kubernetes.installed) {
+                    k8sStatusEl.innerHTML = `<span class="badge badge-success">Installed</span> ${data.kubernetes.running ? '<span class="badge badge-success">Connected</span>' : '<span class="badge badge-warning">Not Connected</span>'}`;
+                    k8sVersionEl.textContent = data.kubernetes.version || '';
+                    installK8sBtn.style.display = 'none';
+                    uninstallK8sBtn.style.display = 'inline-flex';
+                    restartK8sBtn.style.display = 'inline-flex';
+
+                    // Show Setup button if installed but not running
+                    if (!data.kubernetes.running) {
+                        setupK8sBtn.style.display = 'inline-flex';
+                    } else {
+                        setupK8sBtn.style.display = 'none';
+                    }
+
+                    k8sAvailable = data.kubernetes.running; // Only consider available for workloads if running
+                } else {
+                    k8sStatusEl.innerHTML = '<span class="badge badge-danger">Not Installed</span>';
+                    k8sVersionEl.textContent = '';
+                    installK8sBtn.style.display = 'inline-flex';
+                    uninstallK8sBtn.style.display = 'none';
+                    restartK8sBtn.style.display = 'none';
+                    setupK8sBtn.style.display = 'none';
+
+                    k8sAvailable = false;
+                }
+
+                // Update Workload Tabs
+                if (k8sAvailable) {
+                    // If we are seeing "Loading" or "Empty" because of previous failure, reload
+                    if (document.getElementById('podList').innerHTML.indexOf('badge-warning') !== -1 || document.getElementById('podList').innerText.indexOf('Loading') !== -1) {
+                        await loadNamespaces();
+                        loadK8sData();
+                    }
+                } else {
+                    const emptyMsg = `
+                        <div class="empty-state">
+                            <h3>Kubernetes Not Connected</h3>
+                             <p>Please check the <a href="#" onclick="switchTab('settings'); document.querySelectorAll('.tab')[4].classList.add('active'); document.querySelectorAll('.tab')[1].classList.remove('active');">Settings</a> tab.</p>
+                        </div>`;
+                    document.getElementById('podList').innerHTML = emptyMsg;
+                    document.getElementById('deploymentList').innerHTML = emptyMsg;
+                    document.getElementById('serviceList').innerHTML = emptyMsg;
+                }
+
+            } catch (error) {
+                console.error("Failed to check status:", error);
+                document.getElementById('k8sStatus').innerHTML = '<span class="badge badge-danger">Connection Error</span>';
             }
         }
 
         async function loadNamespaces() {
-            const namespaces = await NetControl.api.get('/api/kubernetes/namespaces');
-            const select = document.getElementById('namespaceSelect');
-            select.innerHTML = namespaces.map(ns => `<option value="${ns.name}">${ns.name}</option>`).join('');
+            try {
+                const namespaces = await NetControl.api.get('/api/kubernetes/namespaces');
+                const select = document.getElementById('namespaceSelect');
+                select.innerHTML = namespaces.map(ns => `<option value="${ns.name}">${ns.name}</option>`).join('');
+            } catch (e) { }
         }
 
         async function loadK8sData() {
+            if (!k8sAvailable) return;
             currentNamespace = document.getElementById('namespaceSelect').value;
+            loadOverview();
             loadPods();
             loadDeployments();
             loadServices();
+        }
+
+        async function loadOverview() {
+            try {
+                const stats = await NetControl.api.get(`/api/kubernetes/overview?namespace=${currentNamespace}`);
+                if (!stats) return;
+
+                document.getElementById('ovNodes').textContent = stats.nodes;
+                document.getElementById('ovNodesReady').textContent = `${stats.nodes_ready} Ready`;
+                document.getElementById('ovPodsRunning').textContent = stats.pods_running;
+                document.getElementById('ovPodsTotal').textContent = `${stats.pods} Total`;
+                document.getElementById('ovDeployments').textContent = stats.deployments;
+                document.getElementById('ovServices').textContent = stats.services;
+                document.getElementById('ovCPU').textContent = stats.cpu_capacity;
+                document.getElementById('ovMem').textContent = stats.memory_capacity;
+                document.getElementById('ovVersion').textContent = stats.version;
+
+            } catch (e) {
+                console.error("Failed to load overview:", e);
+            }
         }
 
         async function loadPods() {
@@ -187,13 +465,15 @@
             }
             document.getElementById('podList').innerHTML = `
                 <table class="data-table">
-                    <thead><tr><th>Name</th><th>Ready</th><th>Status</th><th>Restarts</th><th>Age</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Ready</th><th>Status</th><th>IP</th><th>Ports</th><th>Restarts</th><th>Age</th><th>Actions</th></tr></thead>
                     <tbody>
                         ${pods.map(p => `
                             <tr>
                                 <td>${p.name}</td>
                                 <td>${p.ready}</td>
                                 <td><span class="badge badge-${p.status === 'Running' ? 'success' : 'warning'}">${p.status}</span></td>
+                                <td>${p.ip || '-'}</td>
+                                <td>${p.ports || '-'}</td>
                                 <td>${p.restarts}</td>
                                 <td>${p.age}</td>
                                 <td>
@@ -276,6 +556,78 @@
             await NetControl.api.post(`/api/kubernetes/deployments/${name}/restart?namespace=${currentNamespace}`);
             NetControl.showToast('Deployment restarted', 'success');
             loadDeployments();
+        }
+
+        // --- Installer Actions ---
+
+        function installK8s() {
+            startOperation('ws/installer/kubernetes');
+        }
+
+        function setupK8s() {
+            startOperation('ws/installer/setup-k8s');
+        }
+
+        async function uninstallKubernetes() {
+            if (await NetControl.confirmAction('Are you sure you want to uninstall Kubernetes? This will remove the cluster and all data.')) {
+                startOperation('ws/installer/kubernetes/uninstall');
+            }
+        }
+
+        async function restartSoftware(service) {
+            if (await NetControl.confirmAction(`Are you sure you want to restart ${service}?`)) {
+                try {
+                    await NetControl.api.post(`/api/installer/restart/${service}`);
+                    alert(`${service} restarted successfully`);
+                    checkK8s();
+                } catch (e) {
+                    alert('Failed to restart: ' + e.message);
+                }
+            }
+        }
+
+        async function forceUnlock() {
+            if (await NetControl.confirmAction("Force clear installation lock? Only do this if you are sure no other installation is running.")) {
+                try {
+                    await NetControl.api.post('/api/installer/unlock');
+                    NetControl.showToast('Lock cleared', 'success');
+                } catch (e) {
+                    NetControl.showToast('Failed to unlock', 'error');
+                }
+            }
+        }
+
+        function startOperation(endpoint) {
+            document.getElementById('installProgress').style.display = 'block';
+            document.getElementById('installLogs').textContent = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressStatus').textContent = 'Connecting...';
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${protocol}//${window.location.host}/${endpoint}`);
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    document.getElementById('installLogs').textContent += data.message + '\n';
+                    document.getElementById('installLogs').scrollTop = document.getElementById('installLogs').scrollHeight;
+
+                    const match = data.message.match(/\[(\d+)%\]/);
+                    if (match) {
+                        document.getElementById('progressBar').style.width = match[1] + '%';
+                        document.getElementById('progressStatus').textContent = data.message;
+                    }
+                }
+                if (data.complete) {
+                    if (data.success) {
+                        document.getElementById('progressStatus').textContent = 'Operation complete!';
+                        document.getElementById('progressBar').style.width = '100%';
+                    } else if (data.error) {
+                        document.getElementById('progressStatus').textContent = 'Error: ' + data.error;
+                    }
+                    setTimeout(checkK8s, 2000);
+                }
+            };
         }
 
         checkK8s();

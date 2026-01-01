@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -74,6 +75,13 @@ func (i *InstallerService) setProgress(task string, progress int) {
 	defer i.mu.Unlock()
 	i.currentTask = task
 	i.progress = progress
+}
+
+func (i *InstallerService) ResetLock() {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	i.isInstalling = false
+	i.addLog("Installation lock force-cleared by user request.")
 }
 
 func (i *InstallerService) CheckSoftwareStatus() *SoftwareStatus {
@@ -340,6 +348,14 @@ func (i *InstallerService) InstallKubernetes(progressChan chan<- string) error {
 	}
 }
 
+// Core versions
+const (
+	K8S_VERSION    = "v1.30.0"
+	CRICTL_VERSION = "v1.30.0"
+	CNI_VERSION    = "v1.4.0"
+	ARCH           = "amd64" // Assuming amd64 for now as per build
+)
+
 func (i *InstallerService) installKubernetesLinux(progressChan chan<- string) error {
 	distro, err := i.detectLinuxDistro()
 	if err != nil {
@@ -347,69 +363,143 @@ func (i *InstallerService) installKubernetesLinux(progressChan chan<- string) er
 	}
 
 	i.addLog(fmt.Sprintf("Detected Linux distribution: %s", distro))
+	i.addLog("Starting Hybrid Binary Installation...")
 
+	// 1. Install System Dependencies (conntrack, socat, etc.)
+	if err := i.installSystemDependencies(distro, progressChan); err != nil {
+		return err
+	}
+
+	// 2. Download Binaries
+	if err := i.downloadK8sBinaries(progressChan); err != nil {
+		return err
+	}
+
+	i.addLog("Installation check complete. You can now use the 'Setup Cluster' button.")
+	return nil
+}
+
+func (i *InstallerService) installSystemDependencies(distro string, progressChan chan<- string) error {
+	i.setProgress("Installing system dependencies", 10)
+	i.addLog("Installing system dependencies via package manager...")
+
+	var cmd *exec.Cmd
 	switch distro {
 	case "ubuntu", "debian", "kali", "raspbian":
-		return i.installKubernetesDebian(progressChan)
+		exec.Command("apt-get", "update").Run()
+		cmd = exec.Command("apt-get", "install", "-y", "conntrack", "socat", "ebtables", "ethtool", "iptables", "curl")
 	case "centos", "rhel", "fedora", "almalinux", "rocky":
-		return i.installKubernetesRedHat(progressChan)
+		pkgMgr := "yum"
+		if _, err := exec.LookPath("dnf"); err == nil {
+			pkgMgr = "dnf"
+		}
+		cmd = exec.Command(pkgMgr, "install", "-y", "conntrack", "socat", "ebtables", "ethtool", "iptables", "curl")
 	default:
-		return fmt.Errorf("automatic kubernetes installation is not yet supported for %s. please install kubeadm/kubectl manually", distro)
+		return fmt.Errorf("unsupported distro for dependency install: %s", distro)
 	}
+
+	cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		i.addLog(string(output))
+		return fmt.Errorf("failed to install dependencies: %v", err)
+	}
+	i.addLog("Dependencies installed successfully.")
+	return nil
 }
 
-func (i *InstallerService) installKubernetesDebian(progressChan chan<- string) error {
-	// Clean up potential leftover bad config
-	exec.Command("rm", "-f", "/etc/apt/sources.list.d/kubernetes.list").Run()
-	exec.Command("rm", "-f", "/etc/apt/keyrings/kubernetes-apt-keyring.gpg").Run()
+func (i *InstallerService) downloadK8sBinaries(progressChan chan<- string) error {
+	i.setProgress("Downloading Kubernetes binaries", 30)
+	destDir := "/usr/local/bin"
 
-	steps := []struct {
-		name    string
-		cmd     string
-		args    []string
-		percent int
+	binaries := []struct {
+		name string
+		url  string
 	}{
-		{"Updating package index", "apt-get", []string{"update", "-y"}, 10},
-		{"Installing prerequisites", "apt-get", []string{"install", "-y", "apt-transport-https", "ca-certificates", "curl", "gnupg"}, 20},
-		{"Adding Kubernetes GPG key", "sh", []string{"-c", "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"}, 30},
-		{"Adding Kubernetes repository", "sh", []string{"-c", `echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list`}, 40},
-		{"Updating package index", "apt-get", []string{"update", "-y"}, 50},
-		{"Installing kubeadm, kubelet, kubectl", "apt-get", []string{"install", "-y", "kubelet", "kubeadm", "kubectl"}, 80},
-		{"Holding Kubernetes packages", "apt-mark", []string{"hold", "kubelet", "kubeadm", "kubectl"}, 90},
-		{"Enabling kubelet", "systemctl", []string{"enable", "--now", "kubelet"}, 100},
+		{"crictl", fmt.Sprintf("https://github.com/kubernetes-sigs/cri-tools/releases/download/%s/crictl-%s-linux-%s.tar.gz", CRICTL_VERSION, CRICTL_VERSION, ARCH)},
+		{"kubeadm", fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/%s/kubeadm", K8S_VERSION, ARCH)},
+		{"kubelet", fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/%s/kubelet", K8S_VERSION, ARCH)},
+		{"kubectl", fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/%s/kubectl", K8S_VERSION, ARCH)},
 	}
-	return i.executeSteps(steps, progressChan)
+
+	for _, bin := range binaries {
+		i.addLog(fmt.Sprintf("Downloading %s...", bin.name))
+
+		if strings.HasSuffix(bin.url, ".tar.gz") {
+			tmpFile := fmt.Sprintf("/tmp/%s.tar.gz", bin.name)
+			if err := i.downloadFile(bin.url, tmpFile); err != nil {
+				return err
+			}
+			extractCmd := exec.Command("tar", "-xzf", tmpFile, "-C", destDir)
+			if out, err := extractCmd.CombinedOutput(); err != nil {
+				i.addLog(string(out))
+				return fmt.Errorf("failed to extract %s: %v", bin.name, err)
+			}
+			os.Remove(tmpFile)
+		} else {
+			destPath := fmt.Sprintf("%s/%s", destDir, bin.name)
+			if err := i.downloadFile(bin.url, destPath); err != nil {
+				return err
+			}
+			os.Chmod(destPath, 0755)
+		}
+	}
+
+	os.MkdirAll("/opt/cni/bin", 0755)
+	i.addLog("Binaries downloaded and installed to " + destDir)
+	return nil
 }
 
-func (i *InstallerService) installKubernetesRedHat(progressChan chan<- string) error {
-	// Detect yum or dnf
-	pkgMgr := "yum"
-	if _, err := exec.LookPath("dnf"); err == nil {
-		pkgMgr = "dnf"
-	}
+func (i *InstallerService) configureKubeletService(progressChan chan<- string) error {
+	i.setProgress("Configuring kubelet service", 80)
+	i.addLog("Setting up systemd service for kubelet...")
 
-	repoContent := `[kubernetes]
-name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/
-enabled=1
-gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key
+	kubeletServiceContent := `[Unit]
+Description=kubelet: The Kubernetes Node Agent
+Documentation=https://kubernetes.io/docs/home/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/kubelet
+Restart=always
+StartLimitInterval=0
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
 `
-	// Write repo file
-	exec.Command("sh", "-c", fmt.Sprintf("echo '%s' > /etc/yum.repos.d/kubernetes.repo", repoContent)).Run()
-
-	steps := []struct {
-		name    string
-		cmd     string
-		args    []string
-		percent int
-	}{
-		{"Setting SELinux to permissive", "setenforce", []string{"0"}, 10},
-		{"Persisting SELinux permissive mode", "sed", []string{"-i", "s/^SELINUX=enforcing$/SELINUX=permissive/", "/etc/selinux/config"}, 20},
-		{"Installing kubeadm, kubelet, kubectl", pkgMgr, []string{"install", "-y", "kubelet", "kubeadm", "kubectl", "--disableexcludes=kubernetes"}, 70},
-		{"Enabling kubelet", "systemctl", []string{"enable", "--now", "kubelet"}, 100},
+	if err := os.WriteFile("/etc/systemd/system/kubelet.service", []byte(kubeletServiceContent), 0644); err != nil {
+		return fmt.Errorf("failed to write kubelet.service: %v", err)
 	}
-	return i.executeSteps(steps, progressChan)
+
+	os.MkdirAll("/etc/systemd/system/kubelet.service.d", 0755)
+
+	kubeadmConfContent := `[Service]
+Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
+Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
+EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
+EnvironmentFile=-/etc/default/kubelet
+ExecStart=
+ExecStart=/usr/local/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
+`
+	if err := os.WriteFile("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", []byte(kubeadmConfContent), 0644); err != nil {
+		return fmt.Errorf("failed to write 10-kubeadm.conf: %v", err)
+	}
+
+	exec.Command("systemctl", "daemon-reload").Run()
+	exec.Command("systemctl", "enable", "kubelet").Run()
+	exec.Command("systemctl", "start", "kubelet").Run()
+
+	return nil
+}
+
+func (i *InstallerService) downloadFile(url string, dest string) error {
+	cmd := exec.Command("curl", "-L", "-o", dest, url)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("download failed for %s: %s", url, string(out))
+	}
+	return nil
 }
 
 func (i *InstallerService) installKubernetesWindows(progressChan chan<- string) error {
@@ -420,6 +510,7 @@ func (i *InstallerService) installKubernetesWindows(progressChan chan<- string) 
 	}
 	return fmt.Errorf(msg)
 }
+
 func (i *InstallerService) UninstallDocker(progressChan chan<- string) error {
 	i.mu.Lock()
 	if i.isInstalling {
@@ -440,34 +531,66 @@ func (i *InstallerService) UninstallDocker(progressChan chan<- string) error {
 		return fmt.Errorf("uninstall only supported on Linux")
 	}
 
-	steps := []struct {
+	distro, err := i.detectLinuxDistro()
+	if err != nil {
+		return err
+	}
+
+	var steps []struct {
+		name    string
+		cmd     string
+		args    []string
+		percent int
+	}
+
+	switch distro {
+	case "ubuntu", "debian", "kali", "raspbian":
+		steps = []struct {
+			name    string
+			cmd     string
+			args    []string
+			percent int
+		}{
+			{"Stopping Docker service", "systemctl", []string{"stop", "docker"}, 20},
+			{"Removing Docker packages", "apt-get", []string{"purge", "-y", "docker-ce", "docker-ce-cli", "containerd.io", "docker-compose-plugin"}, 60},
+			{"Refresing apt", "apt-get", []string{"autoremove", "-y"}, 70},
+		}
+	case "centos", "rhel", "fedora", "almalinux", "rocky":
+		pkgMgr := "yum"
+		if _, err := exec.LookPath("dnf"); err == nil {
+			pkgMgr = "dnf"
+		}
+		steps = []struct {
+			name    string
+			cmd     string
+			args    []string
+			percent int
+		}{
+			{"Stopping Docker service", "systemctl", []string{"stop", "docker"}, 20},
+			{"Removing Docker packages", pkgMgr, []string{"remove", "-y", "docker-ce", "docker-ce-cli", "containerd.io", "docker-compose-plugin"}, 60},
+			{"Cleaning package cache", pkgMgr, []string{"clean", "all"}, 70},
+		}
+	default:
+		return fmt.Errorf("uninstall not supported for distro: %s", distro)
+	}
+
+	for _, step := range steps {
+		i.executeStep(step.name, step.cmd, step.args, step.percent, progressChan)
+	}
+
+	// Common cleanup
+	cleanupSteps := []struct {
 		name    string
 		cmd     string
 		args    []string
 		percent int
 	}{
-		{"Stopping Docker service", "systemctl", []string{"stop", "docker"}, 20},
-		{"Removing Docker packages", "apt-get", []string{"purge", "-y", "docker-ce", "docker-ce-cli", "containerd.io", "docker-compose-plugin"}, 60},
 		{"Removing Docker data", "rm", []string{"-rf", "/var/lib/docker"}, 80},
 		{"Removing Docker config", "rm", []string{"-rf", "/etc/docker"}, 100},
 	}
 
-	for _, step := range steps {
-		i.setProgress(step.name, step.percent)
-		if progressChan != nil {
-			progressChan <- fmt.Sprintf("[%d%%] %s...", step.percent, step.name)
-		}
-		i.addLog(fmt.Sprintf("[%d%%] %s...", step.percent, step.name))
-
-		cmd := exec.Command(step.cmd, step.args...)
-		output, _ := cmd.CombinedOutput()
-
-		if len(output) > 0 {
-			i.addLog(string(output))
-			if progressChan != nil {
-				progressChan <- string(output)
-			}
-		}
+	for _, step := range cleanupSteps {
+		i.executeStep(step.name, step.cmd, step.args, step.percent, progressChan)
 	}
 
 	successMsg := "Docker uninstalled successfully!"
@@ -498,38 +621,85 @@ func (i *InstallerService) UninstallKubernetes(progressChan chan<- string) error
 		return fmt.Errorf("uninstall only supported on Linux")
 	}
 
+	distro, err := i.detectLinuxDistro()
+	if err != nil {
+		i.addLog("Failed to detect distro: " + err.Error())
+		// Fallback to generic uninstallation attempts? No, unsafe.
+		return err
+	}
+
 	// Kubeadm reset is good practice before uninstalling
+	i.addLog("Resetting cluster nodes...")
 	exec.Command("kubeadm", "reset", "-f").Run()
 
-	steps := []struct {
+	var steps []struct {
+		name    string
+		cmd     string
+		args    []string
+		percent int
+	}
+
+	switch distro {
+	case "ubuntu", "debian", "kali", "raspbian":
+		steps = []struct {
+			name    string
+			cmd     string
+			args    []string
+			percent int
+		}{
+			{"Stopping kubelet", "systemctl", []string{"stop", "kubelet"}, 10},
+			{"Removing Kubernetes packages", "apt-get", []string{"purge", "-y", "kubelet", "kubeadm", "kubectl", "cri-tools"}, 50},
+			{"Refresing apt", "apt-get", []string{"autoremove", "-y"}, 60},
+		}
+	case "centos", "rhel", "fedora", "almalinux", "rocky":
+		pkgMgr := "yum"
+		if _, err := exec.LookPath("dnf"); err == nil {
+			pkgMgr = "dnf"
+		}
+		steps = []struct {
+			name    string
+			cmd     string
+			args    []string
+			percent int
+		}{
+			{"Stopping kubelet", "systemctl", []string{"stop", "kubelet"}, 10},
+			{"Removing Kubernetes packages", pkgMgr, []string{"remove", "-y", "kubelet", "kubeadm", "kubectl", "cri-tools"}, 50},
+			{"Cleaning package cache", pkgMgr, []string{"clean", "all"}, 60},
+		}
+	default:
+		return fmt.Errorf("uninstall not supported for distro: %s", distro)
+	}
+
+	// Common cleanup steps
+	cleanupSteps := []struct {
 		name    string
 		cmd     string
 		args    []string
 		percent int
 	}{
-		{"Stopping kubelet", "systemctl", []string{"stop", "kubelet"}, 10},
-		{"Removing Kubernetes packages", "apt-get", []string{"purge", "-y", "kubelet", "kubeadm", "kubectl"}, 50},
 		{"Removing configs", "rm", []string{"-rf", "/etc/kubernetes", "/var/lib/kubelet", "/root/.kube"}, 80},
-		{"Cleaning CNI", "rm", []string{"-rf", "/etc/cni/net.d", "/opt/cni/bin"}, 90},
-		{"Refresing apt", "apt-get", []string{"autoremove", "-y"}, 100},
+		{"Cleaning CNI", "rm", []string{"-rf", "/etc/cni/net.d", "/opt/cni/bin", "/run/flannel"}, 90},
+		{"Cleaning containerd config", "rm", []string{"-rf", "/etc/containerd/config.toml"}, 95},
 	}
 
+	// Execute distro-specific steps
 	for _, step := range steps {
-		i.setProgress(step.name, step.percent)
-		if progressChan != nil {
-			progressChan <- fmt.Sprintf("[%d%%] %s...", step.percent, step.name)
-		}
-		i.addLog(fmt.Sprintf("[%d%%] %s...", step.percent, step.name))
+		i.executeStep(step.name, step.cmd, step.args, step.percent, progressChan)
+	}
 
-		cmd := exec.Command(step.cmd, step.args...)
-		output, _ := cmd.CombinedOutput()
+	// Execute cleanup steps
+	for _, step := range cleanupSteps {
+		i.executeStep(step.name, step.cmd, step.args, step.percent, progressChan)
+	}
 
-		if len(output) > 0 {
-			i.addLog(string(output))
-			if progressChan != nil {
-				progressChan <- string(output)
-			}
-		}
+	// Manual binary cleanup to ensure "Not Installed" state even if pkg mgr fails or manual install was done
+	binaries := []string{
+		"/usr/bin/kubeadm", "/usr/bin/kubectl", "/usr/bin/kubelet", "/usr/bin/crictl",
+		"/usr/local/bin/kubeadm", "/usr/local/bin/kubectl", "/usr/local/bin/kubelet", "/usr/local/bin/crictl",
+	}
+	i.addLog("Cleaning up residual binaries...")
+	for _, bin := range binaries {
+		exec.Command("rm", "-f", bin).Run()
 	}
 
 	successMsg := "Kubernetes uninstalled successfully!"
@@ -538,6 +708,23 @@ func (i *InstallerService) UninstallKubernetes(progressChan chan<- string) error
 		progressChan <- successMsg
 	}
 	return nil
+}
+
+// Helper to reduce code duplication in Uninstall
+func (i *InstallerService) executeStep(name, cmdStr string, args []string, percent int, progressChan chan<- string) {
+	i.setProgress(name, percent)
+	msg := fmt.Sprintf("[%d%%] %s...", percent, name)
+	i.addLog(msg)
+	if progressChan != nil {
+		progressChan <- msg
+	}
+
+	cmd := exec.Command(cmdStr, args...)
+	output, _ := cmd.CombinedOutput()
+	if len(output) > 0 {
+		i.addLog(string(output))
+		// Optional: don't flood websocket with verbose output unless needed
+	}
 }
 
 func (i *InstallerService) RestartService(serviceName string) error {
@@ -646,6 +833,24 @@ func (i *InstallerService) SetupKubernetes(progressChan chan<- string) error {
 		return fmt.Errorf("kubernetes setup only supported on Linux")
 	}
 
+	distro, err := i.detectLinuxDistro()
+	if err != nil {
+		return fmt.Errorf("failed to detect linux distribution: %v", err)
+	}
+
+	// Define command based on distro
+	criToolsCmd := "apt-get"
+	criToolsArgs := []string{"install", "-y", "cri-tools"}
+
+	if distro == "centos" || distro == "rhel" || distro == "fedora" || distro == "almalinux" || distro == "rocky" {
+		pkgMgr := "yum"
+		if _, err := exec.LookPath("dnf"); err == nil {
+			pkgMgr = "dnf"
+		}
+		criToolsCmd = pkgMgr
+		criToolsArgs = []string{"install", "-y", "cri-tools"}
+	}
+
 	steps := []struct {
 		name    string
 		cmd     string
@@ -653,7 +858,7 @@ func (i *InstallerService) SetupKubernetes(progressChan chan<- string) error {
 		percent int
 	}{
 		// Auto-fix: Install crictl (cri-tools)
-		{"Installing crictl", "apt-get", []string{"install", "-y", "cri-tools"}, 2},
+		{"Installing crictl", criToolsCmd, criToolsArgs, 2},
 
 		// Auto-fix: Configure containerd (Critical for Kubeadm 1.24+)
 		// 1. Generate default config
@@ -679,8 +884,7 @@ func (i *InstallerService) SetupKubernetes(progressChan chan<- string) error {
 		{"Installing Flannel CNI", "kubectl", []string{"apply", "-f", "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml"}, 60},
 
 		// Allow scheduling on the control plane (important for single node setups)
-		{"Untainting control-plane node", "kubectl", []string{"taint", "nodes", "--all", "node-role.kubernetes.io/control-plane-"}, 80},
-		{"Untainting master node (legacy)", "kubectl", []string{"taint", "nodes", "--all", "node-role.kubernetes.io/master-"}, 90},
+		{"Untainting control-plane node", "kubectl", []string{"taint", "nodes", "--all", "node-role.kubernetes.io/control-plane-", "--overwrite"}, 80},
 	}
 
 	for _, step := range steps {
@@ -693,12 +897,8 @@ func (i *InstallerService) SetupKubernetes(progressChan chan<- string) error {
 		cmd := exec.Command(step.cmd, step.args...)
 		// Set environment for root to find kubeadm if needed
 		cmd.Env = append(cmd.Env, "KUBECONFIG=/etc/kubernetes/admin.conf")
-
-		// Special handling for legacy taint command that might fail on newer k8s
-		if strings.Contains(step.name, "legacy") {
-			cmd.Run() // Ignore error
-			continue
-		}
+		// Also append PATH to ensure binaries are found
+		cmd.Env = append(cmd.Env, fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
 
 		output, err := cmd.CombinedOutput()
 		if len(output) > 0 {
@@ -710,8 +910,8 @@ func (i *InstallerService) SetupKubernetes(progressChan chan<- string) error {
 
 		if err != nil {
 			// If it's the taint command, it might fail if already untainted or different version, treat as warning
-			if strings.Contains(step.name, "Untainting") {
-				i.addLog("Warning: Taint command failed (this is often expected on re-runs): " + err.Error())
+			if strings.Contains(step.name, "Untainting") || strings.Contains(step.name, "Resetting") {
+				i.addLog("Warning: Command failed (often expected): " + err.Error())
 				continue
 			}
 			return fmt.Errorf("step '%s' failed: %v", step.name, err)

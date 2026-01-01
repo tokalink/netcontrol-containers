@@ -21,7 +21,10 @@ else {
 Write-Host "[Linux] Building for Linux (amd64)..."
 $env:GOOS = "linux"
 $env:GOARCH = "amd64"
-go build -o build/netcontrol-container .
+$env:CGO_ENABLED = "0"
+Write-Host "Cleaning build cache..."
+go clean -cache
+go build -a -trimpath -buildmode=pie -o build/netcontrol-container .
 if ($LASTEXITCODE -eq 0) {
     Write-Host "[OK] Linux build successful: build/netcontrol-container"
 }

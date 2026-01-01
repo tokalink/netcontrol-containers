@@ -207,6 +207,34 @@ func RenameFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Renamed successfully"})
 }
 
+func ChmodFile(c *gin.Context) {
+	var req struct {
+		Path string `json:"path" binding:"required"`
+		Mode string `json:"mode" binding:"required"` // Octal string, e.g. "0755"
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	req.Path = filepath.Clean(req.Path)
+
+	// Parse octal mode
+	var mode os.FileMode
+	if _, err := fmt.Sscanf(req.Mode, "%o", &mode); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mode format"})
+		return
+	}
+
+	if err := os.Chmod(req.Path, mode); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Permissions changed successfully"})
+}
+
 func CopyFile(c *gin.Context) {
 	var req struct {
 		Source string `json:"source" binding:"required"`

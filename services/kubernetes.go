@@ -30,6 +30,7 @@ type PodInfo struct {
 	Age       string            `json:"age"`
 	IP        string            `json:"ip"`
 	Node      string            `json:"node"`
+	Ports     string            `json:"ports"`
 	Labels    map[string]string `json:"labels"`
 }
 
@@ -58,6 +59,18 @@ type NamespaceInfo struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
 	Age    string `json:"age"`
+}
+
+type ClusterStats struct {
+	Nodes          int    `json:"nodes"`
+	NodesReady     int    `json:"nodes_ready"`
+	Pods           int    `json:"pods"`
+	PodsRunning    int    `json:"pods_running"`
+	Deployments    int    `json:"deployments"`
+	Services       int    `json:"services"`
+	CPUCapacity    string `json:"cpu_capacity"`
+	MemoryCapacity string `json:"memory_capacity"`
+	Version        string `json:"version"`
 }
 
 var k8sService *KubernetesService
@@ -156,11 +169,25 @@ func (k *KubernetesService) ListPods(namespace string) ([]PodInfo, error) {
 			Age:       formatDuration(pod.CreationTimestamp.Time),
 			IP:        pod.Status.PodIP,
 			Node:      pod.Spec.NodeName,
+			Ports:     getPodPorts(&pod),
 			Labels:    pod.Labels,
 		})
 	}
 
 	return result, nil
+}
+
+func getPodPorts(pod *corev1.Pod) string {
+	var ports []string
+	for _, container := range pod.Spec.Containers {
+		for _, p := range container.Ports {
+			ports = append(ports, fmt.Sprintf("%d/%s", p.ContainerPort, p.Protocol))
+		}
+	}
+	if len(ports) == 0 {
+		return "-"
+	}
+	return strings.Join(ports, ", ")
 }
 
 func (k *KubernetesService) ListDeployments(namespace string) ([]DeploymentInfo, error) {
@@ -298,6 +325,81 @@ func (k *KubernetesService) DeletePod(namespace, podName string) error {
 	return k.clientset.CoreV1().Pods(namespace).Delete(ctx, podName, metav1.DeleteOptions{})
 }
 
+func (k *KubernetesService) GetClusterStats(namespace string) (*ClusterStats, error) {
+	ctx := context.Background()
+
+	// 1. Get Nodes (Cluster-wide)
+	nodes, err := k.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	nodesReady := 0
+	var cpuCap, memCap int64
+
+	for _, node := range nodes.Items {
+		// Check readiness
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+				nodesReady++
+			}
+		}
+		// Sum capacity
+		cpu := node.Status.Capacity[corev1.ResourceCPU]
+		mem := node.Status.Capacity[corev1.ResourceMemory]
+		cpuCap += cpu.Value()
+		memCap += mem.Value()
+	}
+
+	// 2. Get Resources (Namespaced or All)
+	if namespace == "" || namespace == "all" {
+		namespace = "" // metav1.NamespaceAll
+	}
+
+	// Pods
+	pods, err := k.clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	podsRunning := 0
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			podsRunning++
+		}
+	}
+
+	// Deployments
+	deps, err := k.clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Services
+	svcs, err := k.clientset.CoreV1().Services(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Version
+	versionInfo, err := k.clientset.Discovery().ServerVersion()
+	version := ""
+	if err == nil {
+		version = versionInfo.GitVersion
+	}
+
+	return &ClusterStats{
+		Nodes:          len(nodes.Items),
+		NodesReady:     nodesReady,
+		Pods:           len(pods.Items),
+		PodsRunning:    podsRunning,
+		Deployments:    len(deps.Items),
+		Services:       len(svcs.Items),
+		CPUCapacity:    fmt.Sprintf("%d Cores", cpuCap),
+		MemoryCapacity: formatBytes(memCap),
+		Version:        version,
+	}, nil
+}
+
 func formatDuration(t time.Time) string {
 	duration := time.Since(t)
 
@@ -311,4 +413,17 @@ func formatDuration(t time.Time) string {
 		return fmt.Sprintf("%dm", int(duration.Minutes()))
 	}
 	return fmt.Sprintf("%ds", int(duration.Seconds()))
+}
+
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
